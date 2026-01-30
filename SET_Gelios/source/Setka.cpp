@@ -1208,10 +1208,10 @@ void Setka::Write_file_for_FCMHD(void)
 	}
 
 	cout << "B" << endl;
-	ofstream file("FCMHD_1.bin", ios::binary);
+	ofstream file("FCMHD_3.bin", ios::binary);
 	if (!file.is_open())
 	{
-		cout << "ERROR FCMHD_1.bin" << endl;
+		cout << "ERROR FCMHD_3.bin" << endl;
 		exit(-1);
 	}
 	cout << "C" << endl;
@@ -1568,7 +1568,7 @@ void Setka::Write_file_for_FCMHD(void)
 
 void Setka::Read_file_for_FCMHD(void)
 {
-	std::ifstream file("FCMHD_1.4_out.bin", std::ios::binary);
+	std::ifstream file("FCMHD_2.1_out.bin", std::ios::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Error opening file: FCMHD_1.8_out.bin");
 	}
@@ -2470,177 +2470,6 @@ void Setka::Print_TVD(void)
 	fout.close();
 }
 
-void Setka::Print_for_Igor(void)
-{
-	ofstream fout;
-	string name_fff = "print_for_Igor_2.txt";
-	fout.open(name_fff);
-
-	// Считаем дивергенцию
-	for (int num_cell = 0; num_cell < this->All_Cells.size(); num_cell++)
-	{
-		//cout << num_cell << endl;
-		auto K = this->All_Cells[num_cell];
-
-		Parametr par1 = K->par[0];
-
-		double dist;
-		double x, y;
-		K->Get_Center(x, y);
-
-
-		double radius = sqrt(kv(x) + kv(y));
-
-
-		double Volume = K->Get_Volume();
-		bool np = true;
-		double Vdiv = 0.0;
-
-		for (auto& i : K->Grans)
-		{
-			double x2, y2, x4, y4;
-			double S = i->Get_square();
-			double n1, n2;
-			i->Get_normal(n1, n2);
-			i->Get_Center(x2, y2);
-			i->Get_Center_posle(x4, y4);
-			dist = sqrt(kv(x - x2) + kv(y - y2));
-			Parametr par2, par11;
-			par11 = par1;
-			i->Get_par(par2, 0);
-			double xx2, yy2;
-			double dist2 = dist;
-
-			if (i->Sosed != nullptr)
-			{
-				i->Sosed->Get_Center(xx2, yy2);
-				dist2 = sqrt(kv(x2 - xx2) + kv(y2 - yy2));
-				par2 = i->Sosed->par[0];
-			}
-			else
-			{
-				par2 = par1;
-				if (i->type == Axis)
-				{
-					par2.v = -par2.v;
-				}
-			}
-
-			if (i->Sosed != nullptr)
-			{
-				if (K->type == C_1 && i->Sosed->type == C_2)
-				{
-					par2 = par1;
-				}
-				if (K->type == C_2 && i->Sosed->type == C_1)
-				{
-					par2 = par1;
-					cout << "2  ->  1  " << x << " " << y << endl;
-					double kx, ky;
-					i->Sosed_down->Get_Center(kx, ky);
-					double dist3 = sqrt(kv(x2 - kx) + kv(y2 - ky));
-					cout << kx << "  " << ky << endl;
-					par2.u = linear(-dist3, i->Sosed_down->par[0].u, -dist, par1.u, dist2);
-					par2.v = linear(-dist3, i->Sosed_down->par[0].v, -dist, par1.v, dist2);
-				}
-				if (K->type == C_1 && i->Sosed->type == C_3)
-				{
-					par2 = par1;
-				}
-				if (K->type == C_3 && i->Sosed->type == C_1)
-				{
-					par2 = par1;
-
-					double kx, ky;
-					i->Sosed_down->Get_Center(kx, ky);
-					double dist3 = sqrt(kv(x2 - kx) + kv(y2 - ky));
-					par2.u = linear(-dist3, i->Sosed_down->par[0].u, -dist, par1.u, dist2);
-					par2.v = linear(-dist3, i->Sosed_down->par[0].v, -dist, par1.v, dist2);
-				}
-				if (K->type == C_3 && i->Sosed->type == C_4)
-				{
-					par2 = par1;
-					double kx, ky;
-					i->Sosed_down->Get_Center(kx, ky);
-					double dist3 = sqrt(kv(x2 - kx) + kv(y2 - ky));
-					par2.u = linear(-dist3, i->Sosed_down->par[0].u, -dist, par1.u, dist2);
-					par2.v = linear(-dist3, i->Sosed_down->par[0].v, -dist, par1.v, dist2);
-				}
-				if (K->type == C_4 && i->Sosed->type == C_3)
-				{
-					par2 = par1;
-				}
-			}
-
-			double sks = n1 * (par11.u * dist2 + par2.u * dist) / (dist + dist2) + n2 * (par11.v * dist2 + par2.v * dist) / (dist + dist2);
-
-			Vdiv = Vdiv + S * sks;
-
-		}
-
-
-		double v = par1.v;
-
-		K->par[0].divV = v / y + Vdiv / Volume;
-	}
-
-	cout << "Divergence " << endl;
-
-	for (auto& i : this->All_Cells)
-	{
-		double x, y;
-		i->Get_Center(x, y);
-		fout << x << " " << y << //
-			" " << i->par[0].ro << " " << i->par[0].p << " " //
-			<< i->par[0].u << " " << i->par[0].v << " " << i->par[0].divV << " " <<//
-			i->par[0].H_n[0] << " " << i->par[0].H_u[0] << " " << i->par[0].H_v[0] << " " << i->par[0].H_T[0] << " " << i->par[0].H_uu[0] << " " << i->par[0].H_uv[0] << " " << i->par[0].H_vv[0] << " " << i->par[0].H_uuu[0] << " " //
-			<< i->par[0].H_n[1] << " " << i->par[0].H_u[1] << " " << i->par[0].H_v[1] << " " << i->par[0].H_T[1] << " " << i->par[0].H_uu[1] << " " << i->par[0].H_uv[1] << " " << i->par[0].H_vv[1] << " " << i->par[0].H_uuu[1] << " " //
-			<< i->par[0].H_n[2] << " " << i->par[0].H_u[2] << " " << i->par[0].H_v[2] << " " << i->par[0].H_T[2] << " " << i->par[0].H_uu[2] << " " << i->par[0].H_uv[2] << " " << i->par[0].H_vv[2] << " " << i->par[0].H_uuu[2] << " " //
-			<< i->par[0].H_n[3] << " " << i->par[0].H_u[3] << " " << i->par[0].H_v[3] << " " << i->par[0].H_T[3] << " " << i->par[0].H_uu[3] << " " << i->par[0].H_uv[3] << " " << i->par[0].H_vv[3] << " " << i->par[0].H_uuu[3] << " " //
-			<< i->par[0].H_n[4] << " " << i->par[0].H_u[4] << " " << i->par[0].H_v[4] << " " << i->par[0].H_T[4] << " " << i->par[0].H_uu[4] << " " << i->par[0].H_uv[4] << " " << i->par[0].H_vv[4] << " " << i->par[0].H_uuu[4] << " " //
-			<< i->par[0].H_n[5] << " " << i->par[0].H_u[5] << " " << i->par[0].H_v[5] << " " << i->par[0].H_T[5] << " " << i->par[0].H_uu[5] << " " << i->par[0].H_uv[5] << " " << i->par[0].H_vv[5] << " " << i->par[0].H_uuu[5] << endl;
-		for (int ii = 0; ii < n_S - 1; ii++)
-		{
-			fout << i->S_m[ii] << " ";
-		}
-		fout << i->S_m[n_S - 1] << endl;
-
-		for (int ii = 0; ii < n_S - 1; ii++)
-		{
-			fout << i->S_p[ii] << " ";
-		}
-		fout << i->S_p[n_S - 1] << endl;
-	}
-	fout.close();
-
-
-	fout.open("TS.txt");
-	for (auto& i : this->Line_Inner)
-	{
-		double x, y;
-		double phi, r;
-		x = (i->A->x + i->B->x) / 2.0;
-		y = (i->A->y + i->B->y) / 2.0;
-		phi = polar_angle(x, y);
-		r = sqrt(x * x + y * y);
-		fout << phi << " " << r << " " << i->Master->par[0].ro << " " << i->Sosed->par[0].ro << endl;
-	}
-	fout.close();
-
-	fout.open("HP.txt");
-	for (auto& i : this->Line_Contact)
-	{
-		double x, y;
-		double phi, r;
-		x = (i->A->x + i->B->x) / 2.0;
-		y = (i->A->y + i->B->y) / 2.0;
-		phi = polar_angle(x, y);
-		r = sqrt(x * x + y * y);
-		fout << phi << " " << r << " " << i->Master->par[0].ro << " " << i->Sosed->par[0].ro << endl;
-	}
-	fout.close();
-}
-
 void Setka::Print_point()
 {
 	ofstream fout;
@@ -3357,10 +3186,9 @@ void Setka::Print_Tecplot_MK(string name0)
 	ofstream fout;
 	string name_f = "2D_tecplot_" + name0 + ".txt";
 	fout.open(name_f);
-	fout << "TITLE = \"HP\"  VARIABLES = \"X\", \"Y\", \"r\", \"Rho\", \"P\", \"Vx\", \"Vy\", \"M\",\"|V|\",\"Rho_H1\", \"P_H1\", \"Vx_H1\", \"Vy_H1\"," << //
-		"\"Rho_H2\", \"P_H2\", \"Vx_H2\", \"Vy_H2\",\"Rho_H3\", \"P_H3\", \"Vx_H3\", \"Vy_H3\",\"Rho_H4\", \"P_H4\"," << //
-		" \"Vx_H4\", \"Vy_H4\", \"RO_H\", \"F_n\", \"F_u\", \"F_v\", \"F_T\", \"I_u\", \"I_v\", \"I_T\", \"II_u\", \"II_v\", \"II_T\", \"M_u\", \"M_v\", \"M_T\",\"H1_n\", \"H1_u\", \"H1_v\", \"H1_T\"," << //
-		"\"H2_n\", \"H2_u\", \"H2_v\", \"H2_T\", \"H3_n\", \"H3_u\", \"H3_v\", \"H3_T\", \"H4_n\", \"H4_u\", \"H4_v\", \"H4_T\", \"H5_n\", \"H5_u\", \"H5_v\", \"H5_T\", \"H6_n\", \"H6_u\", \"H6_v\", \"H6_T\", \"k_u\", \"k_v\", \"k_T\", \"m_1\",  \"m_2\",  \"m_3\",  \"m_4\",  \"m_5\",  \"m_6\",  \"m_7\",  \"num1\", \"num2\", \"num3\", \"num4\", ZONE T = \"HP\"" << endl;
+	fout << "TITLE = \"HP\"  VARIABLES = \"X\", \"Y\", \"r\", \"Rho\", \"P\", \"Vx\", \"Vy\", \"M\",\"|V|\"," << //
+		"\"RO_H\", \"F_n\", \"F_u\", \"F_v\", \"F_T\", \"I_u\", \"I_v\", \"I_T\", \"II_u\", \"II_v\", \"II_T\", \"M_u\", \"M_v\", \"M_T\",\"H1_n\", \"H1_u\", \"H1_v\", \"H1_T\"," << //
+		"\"H2_n\", \"H2_u\", \"H2_v\", \"H2_T\", \"H3_n\", \"H3_u\", \"H3_v\", \"H3_T\", \"H4_n\", \"H4_u\", \"H4_v\", \"H4_T\", \"H5_n\", \"H5_u\", \"H5_v\", \"H5_T\", \"H6_n\", \"H6_u\", \"H6_v\", \"H6_T\", \"k_u\", \"k_v\", \"k_T\", ZONE T = \"HP\"" << endl;
 	for (auto& i : this->All_Cells)
 	{
 		double kk = 1.0;
@@ -3386,14 +3214,7 @@ void Setka::Print_Tecplot_MK(string name0)
 		fout << x << " " << y << " " << sqrt(x * r_o * x * r_o + y * r_o * y * r_o) << //
 			" " << i->par[0].ro * ro_o / kv(kk) << " " << i->par[0].p * p_o << " " //
 			<< i->par[0].u * u_o * kk << " " << i->par[0].v * u_o * kk << " " << Max << " " << QQ << //
-			" " << i->par[0].ro_H1 * ro_o_H << " " << i->par[0].p_H1 * p_o << " " //
-			<< i->par[0].u_H1 * u_o << " " << i->par[0].v_H1 * u_o << //
-			" " << i->par[0].ro_H2 * ro_o_H << " " << i->par[0].p_H2 * p_o << " " //
-			<< i->par[0].u_H2 * u_o << " " << i->par[0].v_H2 * u_o << //
-			" " << i->par[0].ro_H3 * ro_o_H << " " << i->par[0].p_H3 * p_o << " " //
-			<< i->par[0].u_H3 * u_o << " " << i->par[0].v_H3 * u_o << //
-			" " << i->par[0].ro_H4 * ro_o_H << " " << i->par[0].p_H4 * p_o << " " //
-			<< i->par[0].u_H4 * u_o << " " << i->par[0].v_H4 * u_o << " " <<//
+			 " " <<//
 			(i->par[0].ro_H1 + i->par[0].ro_H2 + i->par[0].ro_H3 + i->par[0].ro_H4) * ro_o_H << //
 			" " << i->par[0].F_n << " " << i->par[0].F_u << " " << i->par[0].F_v << " " << i->par[0].F_T << " " //
 			<< i->par[0].I_u * 0.00001107 << " " << i->par[0].I_v * 0.00001107 << " " << i->par[0].I_T * 11.4767 << " " << //
@@ -3405,18 +3226,7 @@ void Setka::Print_Tecplot_MK(string name0)
 			<< i->par[0].H_n[3] * ro_o_H << " " << i->par[0].H_u[3] * u_o << " " << i->par[0].H_v[3] * u_o << " " << i->par[0].H_T[3] * T_o << " " //
 			<< i->par[0].H_n[4] * ro_o_H << " " << i->par[0].H_u[4] * u_o << " " << i->par[0].H_v[4] * u_o << " " << i->par[0].H_T[4] * T_o << " " //
 			<< i->par[0].H_n[5] * ro_o_H << " " << i->par[0].H_u[5] * u_o << " " << i->par[0].H_v[5] * u_o << " " << i->par[0].H_T[5] * T_o << //
-			" " << i->par[0].k_u << " " << i->par[0].k_v << " " << i->par[0].k_T << //
-			" " << i->par[0].w_m[0] << //
-			" " << i->par[0].w_m[1] << //
-			" " << i->par[0].w_m[2] << //
-			" " << i->par[0].w_m[3] << //
-			" " << i->par[0].w_m[4] << //
-			" " << i->par[0].w_m[5] << //
-			" " << i->par[0].w_m[6] << //
-			" " << i->par[0].num_atoms[0] << //
-			" " << i->par[0].num_atoms[1] << //
-			" " << i->par[0].num_atoms[2] << //
-			" " << i->par[0].num_atoms[3] << endl;
+			" " << i->par[0].k_u << " " << i->par[0].k_v << " " << i->par[0].k_T << endl;
 
 	}
 	fout.close();
@@ -14514,22 +14324,6 @@ double Setka::distination(const double& x0, const double& y0, const double& z0,
 	}
 }
 
-void Setka::GD_prepare(void)
-{
-	for (auto& i : this->All_Cells)
-	{
-		if (i->pui_ == true)
-		{
-			i->par[0].ro = i->par[0].ro + i->par[0].npui;
-			double dd = i->par[0].p;
-			i->par[0].p = i->par[0].pp;
-
-			i->par[0].pp = dd;
-
-			//i->par[1] = i->par[0];
-		}
-	}
-}
 
 double Setka::get_w_init(const int& k)
 {
@@ -14537,399 +14331,6 @@ double Setka::get_w_init(const int& k)
 	return this->wmin +  (this->wmax - this->wmin) * k / (this->Nw - 1);    // Для линейной зависимости
 } 
 
-void Setka::culc_PUI(void)
-{
-	ifstream fout;
-	fout.open("fpui.txt");
-
-	double wL, wR;
-	int NN;
-
-	fout >> wL >> wR >> NN;
-	this->wmin = wL * 36.1275;
-	this->wmax = wR * 36.1275;
-	this->Nw = NN;
-
-	cout << this->wmin << "  min - max  " << this->wmax << endl;
-
-	double a;
-	for (int i = 0; i < NN; i++)
-	{
-		fout >> a;
-	}
-
-	double nd = 5.36502e-20;
-
-	for (auto& i : this->All_Cells)
-	{
-		double x, y, d, Tsw;
-		int ii, iii;
-
-		fout >> ii >> x >> y >> iii >> i->par[0].npui >> i->par[0].Tpui >> d >> d >> d >> Tsw;
-		i->par[0].npui = i->par[0].npui / 0.06;
-		i->par[0].Tpui = i->par[0].Tpui / 6527.0;
-		i->par[0].ppui = i->par[0].npui * i->par[0].Tpui;
-		Tsw = Tsw / 6527.0;
-
-		i->par[0].pp = i->par[0].p;
-
-		i->fpui_max = 0.0;
-		for (int k = 0; k < NN; k++)
-		{
-			fout >> a;
-			i->fpui.push_back(a / nd);
-			i->fpui_max = max(i->fpui_max, a / nd);
-		}
-
-		i->Wmin = this->wmin;
-		//for (int k = 0; k < NN; k++)
-		//{
-		//	if (i->fpui[k] > i->fpui_max / 1000.0)
-		//	{
-		//		//i->Wmin = this->wmin * pow(this->wmax / this->wmin, 1.0 * k / (this->Nw - 1));
-		//		i->Wmin = this->get_w_init(k);
-		//		break;
-		//	}
-		//}
-
-		i->Wmax = this->wmax;
-		//for (int k = NN - 1; k >= 0; k--)
-		//{
-		//	if (i->fpui[k] > i->fpui_max / 10000.0)
-		//	{
-		//		//i->Wmax = this->wmin * pow(this->wmax / this->wmin, 1.0 * k / (this->Nw - 1));
-		//		i->Wmax = this->get_w_init(k);
-		//		break;
-		//	}
-		//}
-
-		double SSS = 0.0;
-		for (int ik = 0; ik < this->Nw - 1; ik++)
-		{
-			double L = this->get_w_init(ik);
-			double R = this->get_w_init(ik + 1);
-			double f1 = i->fpui[ik] * L * L * L * L;
-			double f2 = i->fpui[ik + 1] * R * R * R * R;
-			SSS = SSS + 4.0 * pi_ * 0.5 * (f1 + f2) * (R - L);
-		}
-
-		double SS = 0.0;
-		for (int ik = 0; ik < this->Nw - 1; ik++)
-		{
-			double L = this->get_w_init(ik);
-			double R = this->get_w_init(ik + 1);
-			double f1 = i->fpui[ik] * L * L * L * L;
-			double f2 = i->fpui[ik + 1] * R * R * R * R;
-			SS = SS + 4.0 * pi_ * 0.5 * (f1 + f2) * (R - L);
-			if (SS > SSS * 0.999)
-			{
-				i->Wmax = R;
-				break;
-			}
-		}
-		//cout << i->par[0].npui << "  " << SS << "  " << i->number << endl;
-		//cout << i->contour[0]->x << "  " << i->contour[0]->y << "  " << i->Wmin << "   " << i->Wmax << endl;
-
-		if (i->par[0].npui > 0.001 * i->par[0].ro)
-		{
-			if (i->par[0].npui > i->par[0].ro)
-			{
-				cout << "pui > ro   " << i->contour[0]->x << "  " << i->contour[0]->y << "  " << i->par[0].npui  << "  " << i->par[0].ro << endl;
-				double d = (1.01 * i->par[0].npui) / i->par[0].ro;
-				i->par[0].npui = i->par[0].npui / d;
-				i->par[0].ppui = i->par[0].ppui / d;
-				for (auto& j : i->fpui)
-				{
-					j = j / d;
-				}
-			}
-			i->par[0].ro = i->par[0].ro - i->par[0].npui;
-			i->par[0].p = 2.0 * i->par[0].ro * Tsw;
-			i->pui_ = true;
-
-			if (i->par[0].p <= 0.0)
-			{
-				double rr = 1.0 / RR_;
-				double xx, yy;
-				i->Get_Center(xx, yy);
-				double dist = sqrt(kv(xx) + kv(yy));
-				i->par[0].p = 1109.31 * pow(rr / dist, 2.0 * ggg);
-			}
-
-		}
-
-		//i->par[1] = i->par[0];
-
-
-		/*if (i->pui_ == true)
-		{
-			cout << this->wmin << "  " << this->wmax << endl;
-			cout << i->fpui[0] << "  " << i->fpui[1] << "  " << i->fpui[2] << endl;
-			cout << i->get_fpui(10.0, this->wmin, this->wmax) << endl;
-			exit(-1);
-		}*/
-
-
-	}
-
-
-	// Надо разделить функцию распредления на области
-	for (auto& i : this->All_Cells)
-	{
-		double mi = i->fpui[0];
-		double ma = i->fpui[0];
-		i->Wmin_sort.push_back(i->Wmin);
-		bool b1 = false;
-		for (int k = 0; k < i->fpui.size(); k++)
-		{
-			double L = this->get_w_init(k);
-			if (L < i->Wmin && b1 == false)
-			{
-				b1 = true;
-				continue;
-			}
-			if (mi > i->fpui[k])
-			{
-				mi = i->fpui[k];
-			}
-			if (ma < i->fpui[k])
-			{
-				ma = i->fpui[k];
-			}
-
-			if (mi * 100 / ma < 3.0 || L >= i->Wmax)
-			{
-				i->fpui_max_sort.push_back(ma);
-				i->Wmax_sort.push_back(L);
-				mi = i->fpui[k];
-				ma = i->fpui[k];
-				if (L >= i->Wmax)
-				{
-					break;
-				}
-				i->Wmin_sort.push_back(L);
-			}
-		}
-
-		i->i_pui = i->Wmin_sort.size();
-	}
-
-	ofstream fin;
-	fin.open("PUIIII_1130.txt");
-
-	for (int i = 0; i < this->Nw; i++)
-	{
-		//double L = this->wmin * pow(this->wmax / this->wmin, 1.0 * i / (this->Nw - 1));
-		double L = this->get_w_init(i);
-		fin << L << " " << this->All_Cells[1130]->fpui[i] << endl;
-	}
-
-	for (int ik = 0; ik < this->All_Cells[1130]->Wmin_sort.size(); ik++)
-	{
-		cout << this->All_Cells[1130]->Wmin_sort[ik] << " " << this->All_Cells[1130]->Wmax_sort[ik] << " " << this->All_Cells[1130]->fpui_max_sort[ik] << endl;
-	}
-	cout << endl;
-	fin.close();
-
-	fin.open("PUIIII_23.txt");
-
-	for (int i = 0; i < this->Nw; i++)
-	{
-		//double L = this->wmin * pow(this->wmax / this->wmin, 1.0 * i / (this->Nw - 1));
-		double L = this->get_w_init(i);
-		fin << L << " " << this->All_Cells[23]->fpui[i] << endl;
-	}
-	for (int ik = 0; ik < this->All_Cells[23]->Wmin_sort.size(); ik++)
-	{
-		cout << this->All_Cells[23]->Wmin_sort[ik] << " " << this->All_Cells[23]->Wmax_sort[ik] << " " << this->All_Cells[23]->fpui_max_sort[ik] << endl;
-	}
-	cout << endl;
-	fin.close();
-
-	//cout << this->All_Cells[1130]->get_fpui(38.0, this->wmin, this->wmax) << " " << endl;;
-	//cout << this->All_Cells[1130]->Wmin << " " << this->All_Cells[1130]->Wmax << endl;
-	//exit(-1);
-
-	// Считаем всякие полезные интеграллы для последующих перезарядок
-	if (false)
-	{
-
-
-
-//#pragma omp parallel for
-			for (auto& i : this->All_Cells)
-			{
-				double L, R;
-				double f1, f2;
-				double ff1, ff2;
-				double fff1, fff2;
-				double d;
-				int n1 = 100;
-				double dthe = pi_ / (n1 - 1);
-
-				if (i->pui_ == true)
-				{
-					i->nu_pui.resize(i->i_pui);
-					i->nu2_pui.resize(i->i_pui);
-					i->nu3_pui.resize(i->i_pui);
-					if (i->number % 55 == 0)
-					{
-						cout << i->number << endl;
-					}
-
-					vector <double> pui_I1;
-					vector <double> pui_I2;
-					vector <double> pui_I3;
-
-					for (int k = 0; k < k_Igor; k++)
-					{
-						double LL = L_Igor / (k_Igor - 1) * k;
-						double Int1 = 0.0;
-						double Int2 = 0.0;
-						double Int3 = 0.0;
-						int kj = 0;
-						for (int ik = 0; ik < this->Nw - 1; ik++)
-						{
-							L = this->get_w_init(ik);
-							R = this->get_w_init(ik + 1);
-							if (R > i->Wmax)
-							{
-								break;
-							}
-							for (int ij = 0; ij < n1; ij++)
-							{
-								double the = dthe * ij;
-								d = sqrt(L * L + LL * LL - 2.0 * L * LL * cos(the));
-								f1 = i->fpui[ik] * d * sigma(d) * L * L * sin(the);
-								ff1 = i->fpui[ik] * d * sigma(d) * L * L * sin(the) * (LL - L * cos(the));
-								fff1 = i->fpui[ik] * d * d * d * sigma(d) * L * L * sin(the);
-								d = sqrt(R * R + LL * LL - 2.0 * R * LL * cos(the));
-								f2 = i->fpui[ik + 1] * d * sigma(d) * R * R * sin(the);
-								ff2 = i->fpui[ik + 1] * d * sigma(d) * R * R * sin(the) * (LL - R * cos(the));
-								fff2 = i->fpui[ik + 1] * d * d * d * sigma(d) * R * R * sin(the);
-								Int1 = Int1 + 0.5 * (R - L) * (f2 + f1) * dthe;
-								Int2 = Int2 + 0.5 * (R - L) * (ff2 + ff1) * dthe;
-								Int3 = Int3 + 0.5 * (R - L) * (fff2 + fff1) * dthe;
-							}
-							if (R >= i->Wmax_sort[kj])
-							{
-								i->nu_pui[kj].push_back(Int1 * 2.0 * pi_);
-								i->nu2_pui[kj].push_back(Int2 * 2.0 * pi_);
-								i->nu3_pui[kj].push_back(Int3 * 2.0 * pi_);
-								Int1 = 0.0;
-								Int2 = 0.0;
-								Int3 = 0.0;
-								kj++;
-							}
-						}
-					}
-					//cout << IM << endl;
-				}
-			}
-
-			/*for (int ik = 0; ik < this->All_Cells[23]->i_pui; ik++)
-			{
-				cout << this->All_Cells[23]->nu_pui[ik][19] << " " << this->All_Cells[23]->nu2_pui[ik][19] << " " << this->All_Cells[23]->nu3_pui[ik][19] << endl;
-			}*/
-
-		
-	}
-}
-
-void Setka::proverka_Istok(int ni)
-{
-	auto i = this->All_Cells[ni];
-	double L, R;
-	double f1, f2;
-	double ff1, ff2;
-	double fff1, fff2;
-	double d;
-	int n1 = 1000;
-	double dthe = pi_ / (n1 - 1);
-
-	vector <double> pui_I1;
-	vector <double> pui_I2;
-	vector <double> pui_I3;
-
-	double Vh1 = 1.0;
-	double Vh2 = -2.0;
-	double Vh3 = 3.0;
-	double Vp1 = 1.0;
-	double Vp2 = 3.0;
-	double Vp3 = 1.0;
-
-	double Lx = Vh1 - Vp1;
-	double Ly = Vh2 - Vp2;
-	double Lz = Vh3 - Vp3;
-	double LL = sqrt(kv(Lx) + kv(Ly) + kv(Lz));
-
-
-	double Int1 = 0.0;
-	double Int2 = 0.0;
-	double Int3 = 0.0;
-	int kj = 0;
-	for (int ik = 0; ik < this->Nw - 1; ik++)
-	{
-		L = this->get_w_init(ik);
-		R = this->get_w_init(ik + 1);
-
-		for (int ij = 0; ij < n1; ij++)
-		{
-			double the = dthe * ij;
-			d = sqrt(L * L + LL * LL - 2.0 * L * LL * cos(the));
-			f1 = i->fpui[ik] * d * sigma(d) * L * L * sin(the);
-			ff1 = i->fpui[ik] * d * sigma(d) * L * L * sin(the) * (LL - L * cos(the));
-			fff1 = i->fpui[ik] * d * d * d * sigma(d) * L * L * sin(the);
-			d = sqrt(R * R + LL * LL - 2.0 * R * LL * cos(the));
-			f2 = i->fpui[ik + 1] * d * sigma(d) * R * R * sin(the);
-			ff2 = i->fpui[ik + 1] * d * sigma(d) * R * R * sin(the) * (LL - R * cos(the));
-			fff2 = i->fpui[ik + 1] * d * d * d * sigma(d) * R * R * sin(the);
-			Int1 = Int1 + 0.5 * (R - L) * (f2 + f1) * dthe;
-			Int2 = Int2 + 0.5 * (R - L) * (ff2 + ff1) * dthe;
-			Int3 = Int3 + 0.5 * (R - L) * (fff2 + fff1) * dthe;
-		}
-	}
-
-	double skalar2 = (Vh1 * Lx + Vh2 * Ly + Vh3 * Lz) / LL;
-	Int3 = (-0.5 * Int3 + Int2 * skalar2);
-	
-	cout << Int1 * 2.0 * pi_ << "  " << Int2 * 2.0 * pi_ << "  " << Int3 * 2.0 * pi_ << endl << endl;
-	Int1 = 0.0;
-	Int2 = 0.0;
-	Int3 = 0.0;
-
-	double Int2x = 0.0;
-	double Int2y = 0.0;
-	double Int2z = 0.0;
-
-	double dx = 0.05;
-	double dy = 0.05;
-	double dz = 0.05;
-
-	for (double x = -50.0; x < 50.0; x = x + dx)
-	{
-		for (double y = -50.0; y < 50.0; y = y + dy)
-		{
-			for (double z = -50.0; z < 50.0; z = z + dz)
-			{
-				double d1 = sqrt(kv(Vh1 - x) + kv(Vh2 - y) + kv(Vh3 - z));
-				double d2 = sqrt(kv(Vp1 - x) + kv(Vp2 - y) + kv(Vp3 - z));
-				Int1 = Int1 + d1 * sigma(d1) * dx * dy * dz * i->get_fpui(d2, this->wmin, this->wmax);
-				Int2x = Int2x + d1 * sigma(d1) * dx * dy * dz * i->get_fpui(d2, this->wmin, this->wmax) * (Vh1 - x);
-				Int2y = Int2y + d1 * sigma(d1) * dx * dy * dz * i->get_fpui(d2, this->wmin, this->wmax) * (Vh2 - y);
-				Int2z = Int2z + d1 * sigma(d1) * dx * dy * dz * i->get_fpui(d2, this->wmin, this->wmax) * (Vh3 - z);
-				Int3 = Int3 + d1 * sigma(d1) * dx * dy * dz * i->get_fpui(d2, this->wmin, this->wmax) * 0.5 * (kvv(Vh1, Vh2, Vh3) - kvv(x, y, z));
-			}
-		}
-	}
-
-
-
-	Int2 = sqrt(kv(Int2x) + kv(Int2y) + kv(Int2z));
-
-	cout << Int1 << "  " << Int2 << "  " << Int3 << endl << endl << endl;
-	
-}
 
 void Setka::MK_start(void)
 {
@@ -15862,13 +15263,6 @@ void Setka::MK_start_new(void)
 			}
 		}
 
-		if (k->pui_ == true)
-		{
-			k->par[0].ro = k->par[0].ro + k->par[0].npui;
-			double dd = k->par[0].p;
-			k->par[0].p = k->par[0].pp;
-			k->par[0].pp = dd;
-		}
 
 		u = k->par[0].u;
 		v = k->par[0].v;

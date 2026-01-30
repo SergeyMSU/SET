@@ -86,11 +86,11 @@ struct Parametr
 	double I2_mc[4];
 	double I3_mc[4];
 
-	double npui = 0.0;
+	/*double npui = 0.0;
 	double Tpui = 0.0;
 	double pp = 0.0;
 	double ppui = 0.0;
-	double divV = 0.0;
+	double divV = 0.0;*/
 };
 
 class Point;

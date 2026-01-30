@@ -106,6 +106,10 @@ attributes(global) subroutine CUF_MGD_grans(now)
 	dist = dev_norm2(distant)
     rad5 = dev_norm2(gran_centr)
 
+    if(gran_centr(1) > 0.25 .and. gran_centr(2) < 0.07) then
+        metod = 0
+    end if
+
     if(s1 < 1) then
         print*, "ERROR    s1 < 1"
         !STOP
@@ -142,6 +146,9 @@ attributes(global) subroutine CUF_MGD_grans(now)
         qqq2 = qqq1
         qqq2(2:4) = vel1 - vel2
         cell_centr_s2 = cell_centr_s1
+        if(gran_centr(1) < 0.06 .and. qqq2(2) < 0.0) then
+            qqq2(2) = 0.0001
+        end if
         tvd = .FALSE.
     else
         qqq2 = dev_Cell_par(1:8, s2)
