@@ -1,0 +1,14 @@
+
+SET_Gelios/.vs/
+
+*.sln
+
+*.vcxproj
+
+*.filters
+
+*.user
+
+*.bin
+
+*.txt

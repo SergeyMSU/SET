@@ -1,0 +1,536 @@
+module MY_CUDA
+	use STORAGE
+	use cudafor
+	use Solvers
+	implicit none
+
+	integer(4), parameter :: dev_num_param = host_num_param
+	real(8), parameter :: dev_GM = 0.00439795_8
+	real(8), parameter :: dev_Omega = 2.0 * par_pi_8/6.47143
+	real(8), parameter :: dev_lambda = 30.0 * par_pi_8/180.0 !0.52359878_8
+	! rho vx vy vz p bx by bz rhoH3 uH3 vH3 TH3 rhoH4 uH4 vH4 TH4
+	!  1  2  3  4  5 6  7  8  9     10  11  12  13    14  15  16
+
+    real(8), device :: dev_time_all                       ! Текущее время расчёта
+    INTEGER(4), device :: dev_N_cell                       ! Число ячеек в сетке
+    INTEGER(4), device :: dev_N_gran                       ! Число граней в сетке
+
+	real(8), device :: time_step
+	real(8), device :: time_step2
+	real(8), device :: rotate_velosity(3)
+	real(8), device :: Drotate_velosity(3)
+
+
+	real(8), device, allocatable :: dev_Cell_par(:, :)     ! (8, :)
+
+	real(8), device, allocatable :: dev_Cell_center(:, :)      ! (3, :)
+	real(8), device, allocatable :: dev_Cell_Volume(:)         ! (:)
+
+	real(8), device, allocatable :: dev_Gran_normal(:,:)       ! (3, :) Нормаль грани   
+    real(8), device, allocatable :: dev_Gran_square(:)         ! (:) Площадь грани
+	real(8), device, allocatable :: dev_Gran_center(:,:)			! (3, :)
+
+	integer(4), device, allocatable :: dev_Cell_gran(:,:)            ! (6, :) Набор из 6 граней для каждой ячейки (если номер = 0, то грани нет в этом направлении)
+	real(8), device, allocatable :: dev_Cell_dist(:)                 ! Минимальное расстояние до грани в каждой ячейки 
+
+	integer(4), device, allocatable :: dev_Gran_neighbour(:,:) ! Соседи каждой грани (2,:) имеют по 2 соседа, нормаль ведёт от первого ко второму
+	integer(4), device, allocatable :: dev_Gran_neighbour_TVD(:,:) ! TVD-Соседи каждой грани (2,:) имеют по 2 соседа
+
+	integer(4), device, allocatable :: dev_Gran_type(:)                 ! Показывает тип грани
+
+	real(8), device, allocatable :: dev_Gran_POTOK(:, :)       ! (10, :) поток грани    последний - дивергенция магнитного поля для очистки
+
+
+    contains 
+
+	!@cuf attributes(host, device) & 
+	function shortest_vector_to_axis(P, axis_direction) result(vec)
+		implicit none
+		real(8), intent(in) :: P(3)           ! Исходная точка [x, y, z]
+		real(8), intent(in) :: axis_direction(3) ! Направляющий вектор оси [a, b, c]
+		real(8)             :: vec(3)         ! Искомый кратчайший вектор от оси к точке
+		
+		real(8) :: t
+		real(8) :: projection(3)
+		real(8) :: dir_norm(3), norm
+		
+		! 1. Нормируем направляющий вектор оси (чтобы его длина была равна 1)
+		norm = sqrt(axis_direction(1)**2 + axis_direction(2)**2 + axis_direction(3)**2)
+		dir_norm = axis_direction / norm
+		
+		! 2. Находим параметр t проекции точки P на ось
+		! t = (P · axis_direction) / (axis_direction · axis_direction)
+		! Но так как мы нормировали axis_direction, знаменатель = 1
+		t = dot_product(P, dir_norm)
+		
+		! 3. Находим координаты проекции точки P на ось
+		projection = t * dir_norm
+		
+		! 4. Кратчайший вектор от оси к точке - это разность между точкой и её проекцией
+		vec = P - projection
+		
+	end function shortest_vector_to_axis
+
+	!@cuf attributes(host, device) & 
+	real function rho_theta_value(theta)
+		implicit none
+		real(8), intent(in) :: theta ! угол от 0 до pi
+
+		if( abs(theta - 1.5707963267948966) < par_pi_8/180.0 * 20.0) then
+			rho_theta_value = 1.0_8
+		else
+			rho_theta_value = 0.6_8
+		end if
+	end function rho_theta_value
+
+	!@cuf attributes(host, device) & 
+	real function v_theta_value(theta)
+		implicit none
+		real(8), intent(in) :: theta
+		real(8), parameter :: pi = 3.141592653589793
+		real(8), parameter :: half_pi = 1.5707963267948966
+		
+		if( abs(theta - half_pi) < pi/180.0 * 20.0) then
+			v_theta_value = 1.0_8
+		else
+			v_theta_value = 1.6666666666_8
+		end if
+		
+	end function v_theta_value
+
+	!@cuf attributes(host, device) & 
+    subroutine spherical_skorost(z, x, y, Vz, Vx, Vy, Vr, Vphi, Vtheta)
+        ! Variables
+        use My_func
+        implicit none
+        real(8), intent(in) :: x, y, z, Vx, Vy, Vz
+        real(8), intent(out) :: Vr, Vphi, Vtheta
+        real(8) :: r_1, the_1, phi_1
+
+        r_1 = sqrt(x * x + y * y + z * z)
+        the_1 = acos(z / r_1)
+        phi_1 = polar_angle(x, y)
+
+        Vr = Vx * sin(the_1) * cos(phi_1) + Vy * sin(the_1) * sin(phi_1) + Vz * cos(the_1);
+        Vtheta = Vx * cos(the_1) * cos(phi_1) + Vy * cos(the_1) * sin(phi_1) - Vz * sin(the_1);
+        Vphi = -Vx * sin(phi_1) + Vy * cos(phi_1);
+	end subroutine spherical_skorost
+
+	!@cuf attributes(host, device) & 
+    subroutine dekard_skorost(z, x, y, Vr, Vphi, Vtheta, Vz, Vx, Vy)
+        use My_func
+        implicit none
+        real(8), intent(in) :: x, y, z,  Vr, Vphi, Vtheta
+        real(8), intent(out) :: Vx, Vy, Vz
+        real(8) :: r_2, the_2, phi_2
+
+        r_2 = sqrt(x * x + y * y + z * z);
+        the_2 = acos(z / r_2);
+        phi_2 = polar_angle(x, y);
+        
+        !print*, r_2, the_2, phi_2, Vr, Vphi, Vtheta
+        !print*, sin(the_2), cos(phi_2), cos(the_2), sin(phi_2)
+
+        Vx = Vr * sin(the_2) * cos(phi_2) + Vtheta * cos(the_2) * cos(phi_2) - Vphi * sin(phi_2);
+        Vy = Vr * sin(the_2) * sin(phi_2) + Vtheta * cos(the_2) * sin(phi_2) + Vphi * cos(phi_2);
+        Vz = Vr * cos(the_2) - Vtheta * sin(the_2);
+	end subroutine dekard_skorost
+
+	!@cuf attributes(host, device) & 
+	function simple_matvec_mult(A, v) result(w)
+		real(8), intent(in) :: A(3,3), v(3)
+		real(8) :: w(3)
+		
+		w(1) = A(1,1)*v(1) + A(1,2)*v(2) + A(1,3)*v(3)
+		w(2) = A(2,1)*v(1) + A(2,2)*v(2) + A(2,3)*v(3) 
+		w(3) = A(3,1)*v(1) + A(3,2)*v(2) + A(3,3)*v(3)
+	end function
+
+
+		! Матрица поворота вокруг оси Z
+	!@cuf attributes(host, device) & 
+	function rotationMatrixZ(angle_rad) result(R)
+		real(8), intent(in) :: angle_rad
+		real(8) :: R(3,3)
+		real(8) :: cos_angle, sin_angle
+		
+		cos_angle = cos(angle_rad)
+		sin_angle = sin(angle_rad)
+		
+		R = reshape([ cos_angle,  sin_angle, 0.0d0, &
+					 -sin_angle,  cos_angle, 0.0d0, &
+					0.0d0,      0.0d0,    1.0d0 ], [3, 3])
+	end function rotationMatrixZ
+
+	!@cuf attributes(host, device) & 
+	function DrotationMatrixZ(angle_rad) result(R)
+		real(8), intent(in) :: angle_rad
+		real(8) :: R(3,3)
+		real(8) :: cos_angle, sin_angle
+		
+		cos_angle = cos(angle_rad)
+		sin_angle = sin(angle_rad)
+		
+		R = reshape([ -dev_Omega * sin_angle,  dev_Omega * cos_angle, 0.0d0, &
+					 -dev_Omega * cos_angle,  -dev_Omega * sin_angle, 0.0d0, &
+					0.0d0,      0.0d0,    0.0d0 ], [3, 3])
+	end function DrotationMatrixZ
+
+	! Матрица поворота вокруг оси X
+	!@cuf attributes(host, device) & 
+	function rotationMatrixX(angle_rad) result(R)
+		real(8), intent(in) :: angle_rad
+		real(8) :: R(3,3)
+		real(8) :: cos_angle, sin_angle
+		
+		cos_angle = cos(angle_rad)
+		sin_angle = sin(angle_rad)
+		
+		R = reshape([ 1.0d0,     0.0d0,     0.0d0, &
+					0.0d0,     cos_angle, sin_angle, &
+					0.0d0,     -sin_angle, cos_angle ], [3, 3])
+	end function rotationMatrixX
+
+	!@cuf attributes(host, device) & 
+	real(8) function dev_norm2(x)
+		! РАБОТАЕТ ТОЛЬКО ДЛЯ ТРЁХМЕРНЫХ ВЕКТОРОВ
+		implicit none
+		real(8), device :: x(*)
+
+		dev_norm2 = sqrt(x(1)**2 + x(2)**2 + x(3)**2)
+		return
+	end function dev_norm2
+
+	!@cuf attributes(host, device) & 
+	function cross_product(a, b) result(c)
+		real(8), dimension(3), intent(in) :: a, b
+		real(8), dimension(3) :: c
+		
+		c(1) = a(2)*b(3) - a(3)*b(2)
+		c(2) = a(3)*b(1) - a(1)*b(3) 
+		c(3) = a(1)*b(2) - a(2)*b(1)
+	end function cross_product
+
+	!@cuf attributes(device) function Source_MK(Cell_par) result(output)
+        ! Функция device для вычисления Source_MK
+        ! Принимает: real(8), device, allocatable :: Cell_par(:)
+        ! Возвращает: массив из 3-х элементов real(8)
+        implicit none
+        real(8), device, intent(in) :: Cell_par(dev_num_param)
+        real(8) :: output(3)  ! Массив из 3-х элементов
+        
+        ! Локальные переменные
+        real(8) :: uH3, vH3, rhoH3, pH3
+        real(8) :: uH4, vH4, rhoH4, pH4
+        real(8) :: u, v, rho, p
+		real(8) :: U_M_H3, U_H3, sigma_H3, nu_H3
+        real(8) :: U_M_H4, U_H4, sigma_H4, nu_H4
+        real(8) :: sum1, sum2, sum3
+		! rho vx vy vz p bx by bz rhoH3 uH3 vH3 TH3 rhoH4 uH4 vH4 TH4
+		!  1  2  3  4  5 6  7  8  9     10  11  12  13    14  15  16
+        
+		rho = Cell_par(1)
+		u = Cell_par(2)
+		v = Cell_par(3)
+		p = Cell_par(5)
+
+		rhoH3 = Cell_par(9)
+		uH3 = Cell_par(10)
+		vH3 = Cell_par(11)
+		pH3 = 0.5 * Cell_par(12) * rhoH3
+		if(rhoH3 < 0.0000001) then
+			rhoH3 = 0.0000001
+			pH3 = 0.0
+		end if
+
+		rhoH4 = Cell_par(13)
+		uH4 = Cell_par(14)
+		vH4 = Cell_par(15)
+		pH4 = 0.5 * Cell_par(16) * rhoH4
+		if(rhoH4 < 0.0000001) then
+			rhoH4 = 0.0000001
+			pH4 = 0.0
+		end if
+
+		U_M_H3 = sqrt((u - uH3)**2 + (v - vH3)**2 + (64.0 / (9.0 * par_pi_8)) &
+			* (p / rho + 2.0 * pH3 / rhoH3))
+		U_H3 = sqrt((u - uH3)**2 + (v - vH3)**2 + (4.0 / (par_pi_8)) &
+			* (p / rho + 2.0 * pH3 / rhoH3))
+		sigma_H3 = (1.0 - 0.1307345665 * log(U_M_H3))**2
+		nu_H3 = rho * rhoH3 * U_M_H3 * sigma_H3;
+
+		U_M_H4 = sqrt((u - uH4)**2 + (v - vH4)**2 + (64.0 / (9.0 * par_pi_8)) &
+			* (p / rho + 2.0 * pH4 / rhoH4))
+		U_H4 = sqrt((u - uH4)**2 + (v - vH4)**2 + (4.0 / (par_pi_8)) &
+			* (p / rho + 2.0 * pH4 / rhoH4))
+		sigma_H4 = (1.0 - 0.1307345665 * log(U_M_H4))**2
+		nu_H4 = rho * rhoH4 * U_M_H4 * sigma_H4;
+
+		sum1 = 0.0
+		sum2 = 0.0
+		sum3 = 0.0
+
+		sum1 = sum1 + (3.0 / 0.4326569) * nu_H3 * (uH3 - u)
+		sum2 = sum2 + (3.0 / 0.4326569) * nu_H3 * (vH3 - v)
+		sum3 = sum3 + (3.0 / 0.4326569) * nu_H3 * (((uH3)**2 + (vH3)**2 - (u)**2 - (v)**2) / 2.0 + &
+			(U_H3 / U_M_H3) * (2.0 * pH3 / rhoH3 - p / rho))
+
+		sum1 = sum1 + (3.0 / 0.4326569) * nu_H4 * (uH4 - u)
+		sum2 = sum2 + (3.0 / 0.4326569) * nu_H4 * (vH4 - v)
+		sum3 = sum3 + (3.0 / 0.4326569) * nu_H4 * (((uH4)**2 + (vH4)**2 - (u)**2 - (v)**2) / 2.0 + &
+			(U_H4 / U_M_H4) * (2.0 * pH4 / rhoH4 - p / rho))
+        
+        ! Возвращаем результаты
+        output(1) = sum1
+        output(2) = sum2
+        output(3) = sum3
+    end function Source_MK
+
+    subroutine CUDA_info()
+	    ! Функция, печатающая информацию о видеокарте на экран (только о первой видеокарте)
+	    use OMP_lib
+        use cudafor
+        
+        implicit none
+
+         type (cudaDeviceProp) :: prop
+        integer :: nDevices = 0, i, ierr
+		real(8) :: X(3), V(3), Omega(3), eX(3), eV(3), eOmega(3)
+		real(8) :: alpha, lambda
+
+		alpha = par_pi_8/2
+		lambda = 0.0_8
+		X = (/1.0_8, 0.0_8, 0.0_8 /)
+		Omega = (/0.0_8, 0.0_8, 0.9_8 /)
+		V = X * 3.0_8
+
+		eX = simple_matvec_mult(rotationMatrixZ(alpha), simple_matvec_mult(rotationMatrixX(lambda), X))
+		print*, "eX = ", eX
+		eOmega = simple_matvec_mult(rotationMatrixZ(alpha), simple_matvec_mult(rotationMatrixX(lambda), Omega))
+		eV = simple_matvec_mult(rotationMatrixZ(alpha), simple_matvec_mult(rotationMatrixX(lambda), V)) - &
+		cross_product(eOmega, shortest_vector_to_axis(eX, eOmega))
+		print*, "eOmega = ", eOmega
+		print*, "eV = ", eV
+		print*, "V = ", V
+		X(3) = 0.0;
+		V = simple_matvec_mult(rotationMatrixX(-lambda), simple_matvec_mult(rotationMatrixZ(-alpha), eV)) + &
+		cross_product(Omega, X)
+		print*, "V = ", V
+
+        
+         ierr = cudaGetDeviceCount(nDevices)
+		
+		 print*, "  "
+		 print*, "  "
+		print*, "CUDA_info()"
+		print*, "  "
+        
+        write(*, "('Chislo videokard: ', i0)")  nDevices
+		
+		if (nDevices == 0) then
+			STOP "NET CUDA!!!"
+		end if
+		
+		 ierr = cudaGetDeviceProperties(prop, 0)
+		
+		 write(*, "('Version: ', i0,'.',i0)") prop%major, prop%minor
+		 write(*, "('Chislo mulitiprocessorov: ', i0)") prop%multiProcessorCount
+		 write(*, "('Max chislo potokov/multiprocessor: ', i0)") prop%maxThreadsPerMultiprocessor
+		 write(*, "('Global memory (GB): ', f9.3)") prop%totalGlobalMem / 1024.0**3
+		
+		 print*, "Konfiguration of working"
+		 write(*, "('max grid size: ', 2(i0, ' x '), i0 )") prop%maxGridSize
+		 write(*, "('max block size: ', 2(i0, ' x '), i0 )") prop%maxThreadsDim
+		 write(*, "('Max chislo potokov v blocke: ', i0)") prop%maxThreadsPerBlock
+		print*, "                "
+		print*, "                "
+	end subroutine CUDA_info
+
+	subroutine Set_CUDA()
+		! Здесь просто выделяется память на девайсе и скачиваются все массивы из хоста на девайс
+		dev_time_all = 0.0! host_time_all
+		dev_N_cell = host_N_cell
+		dev_N_gran = host_N_gran
+
+		allocate(dev_Cell_par, mold = host_Cell_par)
+		allocate(dev_Cell_center, mold = host_Cell_center)
+		allocate(dev_Cell_Volume, mold = host_Cell_Volume)
+		allocate(dev_Cell_gran, mold = host_Cell_gran)
+		dev_Cell_par = host_Cell_par
+		dev_Cell_center = host_Cell_center
+		dev_Cell_Volume = host_Cell_Volume
+		dev_Cell_gran = host_Cell_gran
+
+		allocate(dev_Gran_normal, mold = host_Gran_normal)
+		allocate(dev_Gran_square, mold = host_Gran_square)
+		allocate(dev_Gran_center, mold = host_Gran_center)
+		allocate(dev_Gran_neighbour, mold = host_Gran_neighbour)
+		allocate(dev_Gran_neighbour_TVD, mold = host_Gran_neighbour_TVD)
+		allocate(dev_Gran_type, mold = host_Gran_type)
+		allocate(dev_Gran_POTOK, mold = host_Gran_POTOK)
+		dev_Gran_normal = host_Gran_normal
+		dev_Gran_square = host_Gran_square
+		dev_Gran_center = host_Gran_center
+		dev_Gran_neighbour = host_Gran_neighbour
+		dev_Gran_neighbour_TVD = host_Gran_neighbour_TVD
+		dev_Gran_type = host_Gran_type
+		dev_Gran_POTOK = host_Gran_POTOK
+	end subroutine Set_CUDA
+
+	subroutine Send_data_to_Host()
+		host_Cell_par = dev_Cell_par
+		host_time_all = dev_time_all
+
+		! deallocate(dev_Cell_par)
+		! deallocate(dev_Cell_center)
+		! deallocate(dev_Cell_Volume)
+		! deallocate(dev_Cell_gran)
+
+		! deallocate(dev_Gran_normal)
+		! deallocate(dev_Gran_square)
+		! deallocate(dev_Gran_center)
+		! deallocate(dev_Gran_neighbour)
+		! deallocate(dev_Gran_neighbour_TVD)
+		! deallocate(dev_Gran_type)
+		! deallocate(dev_Gran_POTOK)
+	end subroutine Send_data_to_Host
+
+	subroutine CUDA_START_MGD()
+		integer :: step, now, now2, step2
+		type(dim3) :: grid, tBlock
+		integer(4):: ierrSync, ierrAsync, nx, ny, ijk, istat, potok_in_block, all_step, print_step
+		real(8) :: local1, rotate_velosity_local(3), alpha
+		real(8) :: Drotate_velosity_local(3)
+		real(8) :: point(3), dev_Omega_local
+		type(cudaEvent) :: startEvent, stopEvent
+		integer(4), device :: dev_now, dev_now2
+		real :: time_work
+		real(8) :: R_x(3,3), R_z(3,3), temp_vec(3), DR_z(3,3)
+		real(8) :: lambda
+
+		lambda = dev_lambda
+		dev_Omega_local = dev_Omega
+
+		call Set_CUDA()
+
+		potok_in_block = 256
+		tBlock = dim3(32, 8, 1)
+		
+		now = 2
+		time_step2 = 0.00002_8              ! Шаг по времени (хранится на девайсе)
+		
+		istat = cudaEventCreate(startEvent)
+		istat = cudaEventCreate(stopEvent)
+		istat = cudaEventRecord(startEvent, 0)
+
+		point = (/0.0, 0.0, dev_Omega_local/);
+		R_x = rotationMatrixX(-lambda)
+		R_z = rotationMatrixZ(1.0_8)
+		DR_z = DrotationMatrixZ(1.0_8)
+		! Последовательное умножение: R_z * (R_x * point)  
+		rotate_velosity_local = simple_matvec_mult(R_x, simple_matvec_mult(R_z, point)) 
+		Drotate_velosity_local = simple_matvec_mult(R_x, simple_matvec_mult(DR_z, point)) 
+		rotate_velosity = rotate_velosity_local
+		Drotate_velosity = Drotate_velosity_local
+
+		all_step = 200000
+		print_step = 20000
+
+		do step = 1,  all_step  ! ---------------------------------------------------------------------------------------------------
+			ierrAsync = cudaDeviceSynchronize()
+			if (mod(step, print_step) == 0) then
+				local1 = time_step2
+				print*, "Step = ", step , "  step_time = ", local1, " all step = ", all_step
+				call flush(6)
+			end if
+
+
+			time_step = time_step2
+			time_step2 = 1000000000000000.0_8
+			
+			local1 = dev_time_all
+			local1 = local1 + time_step
+			dev_time_all = local1
+
+			if (mod(step, print_step) == 0) then
+				print*, "all time = ", local1
+			end if
+
+			if(local1 >= 14.0) EXIT
+			
+
+			! alpha = local1 * dev_Omega_local;
+			! ! print*, "alpha = ", alpha
+			
+
+			! R_z = rotationMatrixZ(-alpha)
+			! DR_z = DrotationMatrixZ(-alpha)
+			! ! Последовательное умножение: R_z * (R_x * point)  
+			! rotate_velosity_local = simple_matvec_mult(R_x, simple_matvec_mult(R_z, point)) 
+			! Drotate_velosity_local = simple_matvec_mult(R_x, simple_matvec_mult(DR_z, point)) 
+			! rotate_velosity = rotate_velosity_local
+			! Drotate_velosity = Drotate_velosity_local
+
+			!if (mod(step, print_step) == 0) then
+				!print*, "rotate_velosity_local = ", rotate_velosity_local(1), rotate_velosity_local(2), rotate_velosity_local(3)
+				!print*, "Drotate_velosity_local = ", Drotate_velosity_local(1), Drotate_velosity_local(2), Drotate_velosity_local(3)
+				!call flush(6)
+			!end if
+
+			now = 2!1
+			!if(local1 >= 20.0) now = 2
+			dev_now = now
+
+			!print*, "start 1  = "
+			call CUF_MGD_grans <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> (dev_now)  ! цикл по граням
+			! call CUF_MGD_grans_test <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> ()  ! цикл по граням
+			!print*, "end 1  = "
+			
+			ierrSync = cudaGetLastError(); 
+			ierrAsync = cudaDeviceSynchronize(); 
+			if (ierrSync /= cudaSuccess) write (*,*) 'Error Sinc start 16: ', cudaGetErrorString(ierrSync)
+			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 17: ', cudaGetErrorString(cudaGetLastError())
+
+			!print*, "start 2  = "
+			call CUF_MGD_cells <<< ceiling(real(dev_N_cell)/potok_in_block), potok_in_block>>> (dev_now)  ! цикл по ячейкам
+			!print*, "end 2  = "
+			
+
+			ierrSync = cudaGetLastError(); 
+			ierrAsync = cudaDeviceSynchronize(); 
+			if (ierrSync /= cudaSuccess) write (*,*) 'Error Sinc start 18: ', cudaGetErrorString(ierrSync); 
+			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
+
+
+			! if (mod(step, 3000) == 0) then
+			! 	call Send_data_to_Host()
+			! 	call Save_Storage()
+			! 	print*, "SAVE"
+			! end if
+	
+		end do
+		
+
+		call Send_data_to_Host()
+
+		istat = cudaEventRecord(stopEvent, 0)
+		istat = cudaEventSynchronize(stopEvent)
+		istat = cudaEventElapsedTime(time_work, startEvent, stopEvent)
+		print *, "CUDA Time work: ", (time_work)/(60*1000.0), "   in minutes"
+
+		deallocate(dev_Cell_par)
+		deallocate(dev_Cell_center)
+		deallocate(dev_Cell_Volume)
+		deallocate(dev_Cell_gran)
+
+		deallocate(dev_Gran_normal)
+		deallocate(dev_Gran_square)
+		deallocate(dev_Gran_center)
+		deallocate(dev_Gran_neighbour)
+		deallocate(dev_Gran_neighbour_TVD)
+		deallocate(dev_Gran_type)
+		deallocate(dev_Gran_POTOK)
+
+	end subroutine CUDA_START_MGD
+
+end module MY_CUDA
