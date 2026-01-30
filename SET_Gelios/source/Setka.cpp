@@ -1491,10 +1491,29 @@ void Setka::Write_file_for_FCMHD(void)
 		if (i->Master->type == Cell_type::C_1 || i->Master->type == Cell_type::C_2 || i->Master->type == Cell_type::C_3 ||
 			A->type == Cell_type::C_1 || A->type == Cell_type::C_2 || A->type == Cell_type::C_3)
 		{
+			if (i->Master->type != Cell_type::C_1 && i->Master->type != Cell_type::C_2 && i->Master->type != Cell_type::C_3)
+			{
+				auto F = i->Sosed_down;
+				i->Sosed_down = i->Sosed_up;
+				i->Sosed_up = F;
+			}
+
 			int value = -1;
+			if(i->Sosed_down != nullptr) value = i->Sosed_down->number;
+			if (value < -1 || value > 100000000)
+			{
+				cout << "Error iwfjoiurehf8oehf78owerf" << value << endl;
+				exit(-1);
+			}
 			file.write(reinterpret_cast<const char*>(&value), sizeof(int));
 
 			value = -1;
+			if (i->Sosed_up != nullptr) value = i->Sosed_up->number;
+			if (value < -1 || value > 100000000)
+			{
+				cout << "Error giouerhygu8eyrg80ergger" << value << endl;
+				exit(-1);
+			}
 			file.write(reinterpret_cast<const char*>(&value), sizeof(int));
 		}
 	}

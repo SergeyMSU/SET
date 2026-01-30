@@ -688,9 +688,11 @@ int main(int argc, char** argv)
         //SS->Print_Tecplot_MK_2d("2d_tecplot_MK_" + name_gd);
 
         cout << "Start create new setka" << endl;
-        //SS3 = new Setka(350, 200, 150, 500, 350, 160, 5, 5);
-        //SS3 = new Setka(290, 160, 100, 400, 175, 80, 5, 5);
-        SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);
+        SS3 = new Setka(350, 200, 150, 500, 350, 160, 5, 5);    // 2
+        //SS3 = new Setka(290, 160, 100, 400, 175, 80, 5, 5);       
+        //SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);       // 1
+        SS3->TVD_prepare();
+        SS3->Proverka();
         cout << "End create new setka" << endl;
         
         SS3->Download_surface("save_surf.bin");
@@ -702,8 +704,8 @@ int main(int argc, char** argv)
         cout << "End pereinterpol" << endl;
 
 
-        SS3->Write_file_for_FCMHD();
-        //SS3->Read_file_for_FCMHD();
+        //SS3->Write_file_for_FCMHD();
+        SS3->Read_file_for_FCMHD();
         cout << "Print 1" << endl;
         //SS3->Print_Tecplot_MK_2d("CUDA_tecplot_MK_" + name_gd);
         cout << "Print 2" << endl;
