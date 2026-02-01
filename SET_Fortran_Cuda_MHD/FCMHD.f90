@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_3.8.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -54,18 +54,62 @@ program MIK
     use STORAGE
     use MY_CUDA
 
+    real(8) :: the, dd
+
     call Set_Storage()
     print*, "Schital"
-    call Fill_data()
+    ! call Fill_data()
+
+    dd = 1.8
 
     ! Изменим скорость и плотность на высоких широтах
-    if(.FALSE.) then
+    if(.TRUE.) then
         do i = 1, size(host_Cell_par(1, :)) 
-            if( norm2(host_Cell_center(:, i)) < 0.1) then
-                if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/4.0) then
+            if( norm2(host_Cell_center(:, i)) < 0.11) then
+                the = polar_angle(host_Cell_center(1, i), host_Cell_center(2, i))
+
+                !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/4.0) then  ! 45
+                !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
+                !if(the > par_pi_8/5.14285714) then   ! 35
+                !    host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !    host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !    host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+
+
+                ! 27.5 - 32.5
+                ! if(the > par_pi_8/5.53846154) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else if(the > par_pi_8/6.5454545454545454) then
+                !     dd = 1.0 + 0.8 * (the - par_pi_8/6.5454545454545454) / (par_pi_8 * (1.0/5.53846154 - 1.0/6.5454545454545454))
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
+
+                ! 25 - 35
+                ! if(the > par_pi_8/5.14285714) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else if(the > par_pi_8/7.2) then
+                !     dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
+
+                ! 20 - 40
+                if(the > par_pi_8/4.5) then  
                     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
                     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
                     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                else if(the > par_pi_8/9.0) then
+                    dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/4.5 - 1.0/9.0))
+                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
                 end if
             end if
         end do
