@@ -437,8 +437,8 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 500000              ! Лучше чётное число шагов
-		print_step = 20000
+		all_step = 1500000              ! Лучше чётное число шагов
+		print_step = 50000
 
 		do step = 1,  all_step  ! ---------------------------------------------------------------------------------------------------
 			ierrAsync = cudaDeviceSynchronize()
@@ -460,7 +460,7 @@ module MY_CUDA
 				print*, "all time = ", local1
 			end if
 
-			if(local1 >= 14.0) EXIT
+			!if(local1 >= 14.0) EXIT
 			
 
 			! alpha = local1 * dev_Omega_local;
@@ -485,7 +485,7 @@ module MY_CUDA
 			!if(local1 >= 20.0) now = 2
 			dev_now = now
 
-			if(.FALSE.) then
+			if(.TRUE.) then
 				call CUF_MGD_grans <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> (dev_now)  ! цикл по граням
 				! call CUF_MGD_grans_test <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> ()  ! цикл по граням
 				

@@ -170,7 +170,7 @@ module STORAGE
 
 
         ! Открываем файл для записи в бинарном формате
-        open(newunit=unit, file="FCMHD_3.10_out.bin", form='unformatted', access='stream', &
+        open(newunit=unit, file="FCMHD_3.8_out.bin", form='unformatted', access='stream', &
             action='write', status='replace', iostat=ierr)
         
         if (ierr /= 0) then
