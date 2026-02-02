@@ -232,6 +232,200 @@ attributes(global) subroutine CUF_MGD_grans(now)
 
 end subroutine  CUF_MGD_grans
 
+attributes(global) subroutine CUF_MGD_grans_RK2(now, step)
+    use MY_CUDA
+    implicit none
+	integer, intent(in) :: now, step
+    ! step = 1 или step = 2
+    integer(4) :: n_disc, gr, metod, s1, s2, ss1, ss2, type, i
+    real(8) :: time, dist, wc, dsl, dsp, dsc, aa, bb, cc, the
+    real(8) :: POTOK(8), distant(3), Gran_normal(3), square, rast(3)
+    real(8) :: qqq1(8), qqq2(8), qqq11(8), qqq22(8)
+    real(8) :: qqq1_TVD(8), qqq2_TVD(8)
+    real(8) :: df1, df2, dff1, dff2, rad1, rad2, rad3, rad4, rad5, gran_centr(3), cell_centr_s1(3)
+    real(8) :: cell_centr_s2(3), cell_centr_ss1(3), cell_centr_ss2(3), mv, mb, r_rotate(3), b_phi, drot, normal(3), vel1(3), vel2(3), vel
+    logical :: tvd 
+    real(8) :: alpha, vvv(3)
+
+
+    tvd = .TRUE.
+    metod = 2! 2
+
+    ! if(now == 1) then
+    !     tvd = .FALSE.
+    !     metod = 0
+    ! end if
+
+	n_disc = 0!! 1
+	time = 100000.0
+	gr = blockDim%x * (blockIdx%x - 1) + threadIdx%x   ! Номер потока
+
+    if (gr > dev_N_gran) return
+
+    type = dev_Gran_type(gr)
+
+    !if(type == 2) return
+
+ 
+    POTOK = 0.0
+	s1 = dev_Gran_neighbour(1, gr)
+	s2 = dev_Gran_neighbour(2, gr)
+
+    cell_centr_s1 = dev_Cell_center(:, s1)
+
+    !if( norm2(cell_centr_s1) < 0.05) return
+
+    gran_centr = dev_Gran_center(:, gr)
+    distant = gran_centr - cell_centr_s1
+	dist = dev_norm2(distant)
+    rad5 = dev_norm2(gran_centr)
+
+    if(gran_centr(1) > 0.22 .and. gran_centr(2) < 0.1 .and. abs(dev_Gran_normal(1, gr)) < 0.1) then
+        metod = 0
+    end if
+
+    if(s1 < 1) then
+        print*, "ERROR    s1 < 1"
+        !STOP
+    end if
+
+    if(step == 1) then
+        qqq1 = dev_Cell_par(1:8, s1)
+    else if(step == 2) then
+        qqq1 = dev_Cell_par2(1:8, s1)
+    end if
+
+    !qqq1 = dev_Cell_par(1:8, s1)
+
+    if(qqq1(1) <= 0.0) then
+        print*, "ERROR 9iu3498h34fh", qqq1(1), s1
+        !STOP
+    end if
+
+    if(type == 4) then
+        qqq2 = qqq1
+        if(qqq2(2) > -0.1) then
+             qqq2(2) = -0.1
+        end if
+        cell_centr_s2 = cell_centr_s1
+        tvd = .FALSE.
+    else if(type == 5) then
+        qqq2 = qqq1
+        qqq2(3) = -qqq2(3)
+        cell_centr_s2 = cell_centr_s1
+        tvd = .FALSE.
+    else if(type == 2 .and. s2 == -1) then
+        Gran_normal = dev_Gran_normal(:, gr)
+        normal(1) = Gran_normal(1)
+        normal(2) = Gran_normal(2)
+        normal(3) = Gran_normal(3)
+        vel = DOT_PRODUCT(Gran_normal(:), qqq1(2:4))
+        vel1 = qqq1(2:4) - vel * Gran_normal(:)
+        vel2 = vel * Gran_normal(:)
+
+        qqq2 = qqq1
+        qqq2(2:4) = vel1 - vel2
+        cell_centr_s2 = cell_centr_s1
+        ! if(gran_centr(1) < 0.06 .and. qqq2(2) < 0.0) then
+        !     qqq2(2) = 0.0001
+        ! end if
+        tvd = .FALSE.
+    else
+        if(step == 1) then
+            qqq2 = dev_Cell_par(1:8, s2)
+        else if(step == 2) then
+            qqq2 = dev_Cell_par2(1:8, s2)
+        end if
+        ! qqq2 = dev_Cell_par(1:8, s2)
+        cell_centr_s2 = dev_Cell_center(:, s2)
+    end if
+
+    !if( norm2(cell_centr_s2) < 0.05) return
+
+    Gran_normal = dev_Gran_normal(:, gr)
+    square = dev_Gran_square(gr)
+
+    !tvd = .FALSE.
+    ! Делаем TVD и всякие сносы
+    ss1 = dev_Gran_neighbour_TVD(1, gr)
+	ss2 = dev_Gran_neighbour_TVD(2, gr)
+
+    if(tvd == .TRUE. .and. ss1 >= 1 .and. ss2 >= 1) then
+        cell_centr_ss1 = dev_Cell_center(:, ss1)
+        cell_centr_ss2 = dev_Cell_center(:, ss2)
+        rast = gran_centr - cell_centr_s1
+        df1 = dev_norm2(rast)
+        rast = gran_centr - cell_centr_s2
+        df2 = dev_norm2(rast)
+        rast = gran_centr - cell_centr_ss1
+        dff1 = dev_norm2(rast)
+        rast = gran_centr - cell_centr_ss2
+        dff2 = dev_norm2(rast)
+        
+        if(step == 1) then
+            qqq11 = dev_Cell_par(:, ss1)
+            qqq22 = dev_Cell_par(:, ss2)
+        else if(step == 2) then
+            qqq11 = dev_Cell_par2(:, ss1)
+            qqq22 = dev_Cell_par2(:, ss2)
+        end if
+        !qqq11 = dev_Cell_par(:, ss1)
+        !qqq22 = dev_Cell_par(:, ss2)
+
+        
+        do i = 1, 5
+            qqq1_TVD(i) = linear(-dff1, qqq11(i), -df1, qqq1(i), df2, qqq2(i), 0.0_8)
+            qqq2_TVD(i) = linear(-dff2, qqq22(i), -df2, qqq2(i), df1, qqq1(i), 0.0_8)
+        end do
+
+        if(qqq1_TVD(1) < 0.0) then
+            qqq1_TVD(1) = qqq1(1)
+        end if
+        if(qqq1_TVD(5) < 0.0) then
+            qqq1_TVD(5) = qqq1(5)
+        end if
+
+        if(qqq2_TVD(1) < 0.0) then
+            qqq2_TVD(1) = qqq2(1)
+        end if
+        if(qqq2_TVD(5) < 0.0) then
+            qqq2_TVD(5) = qqq2(5)
+        end if
+
+    
+        qqq1 = qqq1_TVD
+        qqq2 = qqq2_TVD
+        
+    end if
+
+    if(qqq1(1) < 0.0 .or. qqq2(1) < 0.0) then
+        print*, "ERROR JR(Fguiehfiehjferfer)"
+        write(*, *) cell_centr_s1(1), cell_centr_s1(2), cell_centr_s1(3)
+        write(*, *) qqq1(1), qqq1(2), qqq1(3), qqq1(4), qqq1(5), qqq1(6), qqq1(7), qqq1(8)
+        write(*, *) qqq2(1), qqq2(2), qqq2(3), qqq2(4), qqq2(5), qqq2(6), qqq2(7), qqq2(8)
+        STOP
+    end if
+
+    wc = 0.0_8
+    call chlld(metod, Gran_normal(1), Gran_normal(2), Gran_normal(3), &
+	 	wc, qqq1, qqq2, &
+         dsl, dsp, dsc,  &
+         POTOK, n_disc)
+
+
+    time = min(time, 0.9 * dist/(max(dabs(dsl), dabs(dsp))+ dabs(wc)) )   ! REDUCTION
+    !time = min(time, 0.9 * dist/(dev_norm2(cross_product(gran_centr, rotate_velosity))))
+	dev_Gran_POTOK(1:8, gr) = POTOK * square
+	
+	dev_Gran_POTOK(8 + 1, gr) = 0.0! 0.5 * DOT_PRODUCT(Gran_normal(:), qqq1(6:8) + qqq2(6:8)) * square
+
+
+    if (step == 1) then
+        time = atomicmin(time_step2, time)   ! Атомарная операция взятия минимального значения
+    end if
+
+end subroutine  CUF_MGD_grans_RK2
+
 
 attributes(global) subroutine CUF_MGD_cells(now)
     use MY_CUDA
@@ -349,3 +543,165 @@ attributes(global) subroutine CUF_MGD_cells(now)
     dev_Cell_par(1:8, gr) = (/ro3, u3, v3, w3, p3, bx3, by3, bz3/)
 
 end subroutine CUF_MGD_cells
+
+
+attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
+    ! Метод Рунге-Кутта для увеличиения порядка по времени до второго
+    use MY_CUDA
+    implicit none
+	integer, intent(in) :: now, step
+    ! step = 1 или step = 2
+
+    integer(4) :: gr
+	integer(4) :: st, i, j
+	real(8) :: qqq(dev_num_param)  ! Переменные в ячейке
+	real(8) :: qqq2(dev_num_param)  ! Переменные в ячейке
+	real(8) :: dist, QQ3
+	real(8) :: POTOK(8), vv(3), rr(3), F(3)
+	real(8) :: time, Volume, sks
+	real(8) :: ro3, u3, v3, w3, p3, bx3, by3, bz3
+    real(8) :: rotate_velosity_lokal(3)
+    real(8) :: Drotate_velosity_lokal(3)
+    real(8) :: source(3)
+	
+    
+	gr = blockDim%x * (blockIdx%x - 1) + threadIdx%x   ! Номер потока
+	time = time_step
+
+    if (gr > dev_N_cell) return
+
+    !rotate_velosity_lokal = rotate_velosity
+    !Drotate_velosity_lokal = Drotate_velosity
+
+    POTOK = 0.0
+    sks = 0.0
+    Volume = dev_Cell_Volume(gr)
+    rr = dev_Cell_center(:, gr)
+    dist = dev_norm2(rr)
+
+    if(step == 1) then
+        qqq = dev_Cell_par(:, gr)
+    else if(step == 2) then
+        qqq = dev_Cell_par2(:, gr)
+        qqq2 = dev_Cell_par(:, gr)
+    end if
+    
+    vv = qqq(2:4)
+    !F = 2.0 * qqq(1) * cross_product(vv, rotate_velosity_lokal) + &
+     !           qqq(1) * cross_product(rotate_velosity_lokal , cross_product(rr, rotate_velosity_lokal))  + &
+    !            qqq(1) * cross_product(rr, Drotate_velosity_lokal) &
+    !            - qqq(1) * rr * dev_GM / (dist**3)   
+    !QQ3 = DOT_PRODUCT(F, vv);
+    F = 0.0_8
+    QQ3 = 0.0_8
+
+    if (norm2(rr) < 0.05) return
+
+    source = Source_MK(qqq)
+    !source = 0.0
+
+    ! Просуммируем потоки через грани
+    do i = 1, 4  ! было 6, но сейчас у ячейки 4 грани
+        j = dev_Cell_gran(i, gr)
+        if (j == 0) CYCLE
+        if (j < 0) write(*, *) "ERROR 3876tfghjuyghejk"
+
+        if (dev_Gran_neighbour(1, j) == gr) then
+            POTOK = POTOK + dev_Gran_POTOK(1:8, j)
+            sks = sks + dev_Gran_POTOK(8 + 1, j)
+        else
+            POTOK = POTOK - dev_Gran_POTOK(1:8, j)
+            sks = sks - dev_Gran_POTOK(8 + 1, j)
+        end if
+    end do
+
+    if(step == 1) then
+        ro3 = qqq(1) - time * (POTOK(1) / Volume + qqq(1) * qqq(3)/rr(2))
+
+        if (ro3 <= 0.0_8) then
+            write(*, *) "Ro < 0  3688"
+            write(*, *) " ---  ", ro3, qqq(1), rr(1), rr(2), rr(3)
+            STOP
+            ro3 = 0.1
+
+            u3 = qqq(2)
+            v3 = qqq(3)
+            w3 = qqq(4)
+
+            bx3 = qqq(6)
+            by3 = qqq(7)
+            bz3 = qqq(8)
+
+            p3 = qqq(5)
+
+        else
+            u3 = (qqq(1) * qqq(2) - time * (POTOK(2)) / Volume + time * source(1) - time * qqq(1) * qqq(2) * qqq(3)/rr(2)) / ro3
+            !u3 = (qqq(1) * qqq(2) - time * (POTOK(2)) / Volume + time * source(1)) / ro3
+            v3 = (qqq(1) * qqq(3) - time * (POTOK(3)) / Volume + time * source(2) - time * qqq(1) * qqq(3) * qqq(3)/rr(2)) / ro3
+            !v3 = (qqq(1) * qqq(3) - time * (POTOK(3)) / Volume + time * source(2)) / ro3
+            w3 = 0.0_8 !(qqq(1) * qqq(4) - time * (POTOK(4) + (qqq(8)/cpi4) * sks) / Volume + time * F(3)) / ro3
+            
+            bx3 = 0.0_8 !qqq(6) - time * (POTOK(6) + qqq(2) * sks) / Volume
+            by3 = 0.0_8 !qqq(7) - time * (POTOK(7) + qqq(3) * sks) / Volume
+            bz3 = 0.0_8 !qqq(8) - time * (POTOK(8) + qqq(4) * sks) / Volume
+            
+            p3 = ((  ( qqq(5) / (ggg - 1.0) + 0.5 * qqq(1) * dev_norm2(qqq(2:4))**2  ) &
+                - time * (POTOK(5))/ Volume  + time * source(3) - time * qqq(3) * (ggg * qqq(5) / (ggg - 1) + qqq(1) * (qqq(2)**2 + qqq(3)**2) * 0.5) / rr(2) &
+            !  - time * (POTOK(5))/ Volume  + time * source(3) &
+                ) - 0.5 * ro3 * (u3**2 + v3**2 + w3**2) ) * (ggg - 1.0)
+        end if
+    else if(step == 2) then
+        ro3 = 0.5_8 * (qqq2(1) + qqq(1) - time * (POTOK(1) / Volume + qqq(1) * qqq(3)/rr(2)))
+
+        if (ro3 <= 0.0_8) then
+            write(*, *) "Ro < 0  3688"
+            write(*, *) " ---  ", ro3, qqq(1), rr(1), rr(2), rr(3)
+            STOP
+            ro3 = 0.1
+
+            u3 = qqq(2)
+            v3 = qqq(3)
+            w3 = qqq(4)
+
+            bx3 = qqq(6)
+            by3 = qqq(7)
+            bz3 = qqq(8)
+
+            p3 = qqq(5)
+
+        else
+            u3 = 0.5_8 * (qqq2(1) * qqq2(2) + qqq(1) * qqq(2) - time * (POTOK(2)) / Volume + time * source(1) - time * qqq(1) * qqq(2) * qqq(3)/rr(2)) / ro3
+            v3 = 0.5_8 * (qqq2(1) * qqq2(3) + qqq(1) * qqq(3) - time * (POTOK(3)) / Volume + time * source(2) - time * qqq(1) * qqq(3) * qqq(3)/rr(2)) / ro3
+            w3 = 0.0_8 
+            
+            bx3 = 0.0_8 
+            by3 = 0.0_8 
+            bz3 = 0.0_8
+            
+            p3 = ( 0.5_8 * (  ( qqq2(5) / (ggg - 1.0) + 0.5 * qqq2(1) * dev_norm2(qqq2(2:4))**2  ) + ( qqq(5) / (ggg - 1.0) + 0.5 * qqq(1) * dev_norm2(qqq(2:4))**2  ) &
+                - time * (POTOK(5))/ Volume  + time * source(3) - time * qqq(3) * (ggg * qqq(5) / (ggg - 1) + qqq(1) * (qqq(2)**2 + qqq(3)**2) * 0.5) / rr(2) &
+                ) - 0.5 * ro3 * (u3**2 + v3**2 + w3**2) ) * (ggg - 1.0)
+        end if
+    end if
+
+
+
+    
+    if (p3 <= 0.0_8) then
+        p3 = 0.0000001
+    end if
+
+
+
+    if(rr(1) > 0.28 .and. rr(2) < 0.07 .and.v3 < 0.0) then
+        v3 = 0.01
+    end if
+
+    
+    if(step == 1) then
+        dev_Cell_par2(1:8, gr) = (/ro3, u3, v3, w3, p3, bx3, by3, bz3/)
+    else if(step == 2) then
+        dev_Cell_par(1:8, gr) = (/ro3, u3, v3, w3, p3, bx3, by3, bz3/)
+    end if
+
+end subroutine CUF_MGD_cell_RK2
