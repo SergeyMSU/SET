@@ -1566,9 +1566,152 @@ void Setka::Write_file_for_FCMHD(void)
 
 }
 
+void Setka::Culc_ENA(Setka* SS3)
+{
+	double LOS_x = 1.0;   // Направление интегрирования
+	double LOS_y = 2.0;
+
+	// Задаём значения
+	double ae = 0.00313166;    // 1 ае
+	double kms = 0.0963358;    // 1 км/с
+
+	double x0 = 0.0;
+	double y0 = 0.0;
+
+	double a = 0.0;   // Вспомогательная переменная
+	double S = 0.0;   // Поглощение ENA
+	double jENA = 0.0;
+	int b;
+	double rho_p, p_p, u_p, v_p, cp_p;
+	double rho_H3, p_H3, u_H3, v_H3, cp_H3;
+	double rho_H4, p_H4, u_H4, v_H4, cp_H4;
+	double u, uz, nu_ex, nu_H, nu_H3, nu_H4;
+
+	// На всякий случай нормируем LOS
+	a = sqrt(kvv(0.0, LOS_x, LOS_y));   
+	LOS_x /= a;
+	LOS_y /= a;
+
+	// Задаём начальное положение (на 2 АЕ)
+	x0 = x0 + 5.0 * LOS_x * ae;
+	y0 = y0 + 5.0 * LOS_y * ae;
+
+	double v = 100 * kms;   // Скорость, для которой считаем поток
+	double ds = ae / 3.0;   // Шаг интегрирования
+	S = 1.0;
+	jENA = 0.0;
+	x0 = x0 + LOS_x * ds / 2.0;
+	y0 = y0 + LOS_y * ds / 2.0;
+	MKmethod MK = MKmethod();
+
+	// Цикл интегрирования
+	while (true)
+	{
+		Cell* A = this->Find_cell(b, x0, y0);
+		if (b == 0)
+		{
+			cout << "! END " << x0 << " " <<  y0 << endl;
+			break;
+		}
+
+		if (A->type == Cell_type::C_4 || A->type == Cell_type::C_5)
+		{
+			double xx, yy;
+			A->Get_Center(xx, yy);
+			cout << "END ZONE " << x0 << " " << y0 << " " << b << " " << xx << " " << yy << endl;
+			cout << (int)(A->type) << " " << A->belong(x0, y0) << endl;
+			cout << A->contour[0]->x << " " << A->contour[0]->y << endl;
+			cout << A->contour[1]->x << " " << A->contour[1]->y << endl;
+			cout << A->contour[2]->x << " " << A->contour[2]->y << endl;
+			cout << A->contour[3]->x << " " << A->contour[3]->y << endl;
+			// Надо для каждой грани вывести её центр и нормаль, чтобы посмотреть, всё ли правильно в этой ячейке
+			// нормали должны быть внешние!
+
+
+			break;
+		}
+
+		// Получаем параметры плазмы и водорода в ячейке
+		rho_p = A->par[0].ro;
+		p_p = A->par[0].p;
+		u_p = A->par[0].u;
+		v_p = A->par[0].v;
+		cp_p = sqrt(p_p / rho_p);
+
+		rho_H3 = A->par[0].H_n[2] * 3.0;
+		p_H3 = 0.5 * rho_H3 * A->par[0].H_T[2];
+		u_H3 = A->par[0].H_u[2];
+		v_H3 = A->par[0].H_v[2];
+		cp_H3 = sqrt(p_H3 / rho_H3);
+
+		rho_H4 = A->par[0].H_n[3] * 3.0;
+		p_H4 = 0.5 * rho_H4 * A->par[0].H_T[3];
+		u_H4 = A->par[0].H_u[3];
+		v_H4 = A->par[0].H_v[3];
+		cp_H4 = sqrt(p_H4 / rho_H4);
+
+		
+
+		// Считаем частоты
+
+		u = sqrt(kvv(-v * LOS_x - u_p, -v * LOS_y - v_p, 0.0));
+		if (u / cp_p > 7.0)
+		{
+			uz = Velosity_1(u, cp_p);
+			nu_ex = (rho_p * uz * sigma(uz)) / Kn_;
+		}
+		else
+		{
+			nu_ex = (rho_p * MK.int_1(u, cp_p)) / Kn_;        // Пробуем вычислять интеграллы численно
+		}
+
+		u = sqrt(kvv(-v * LOS_x - u_H3, -v * LOS_y - v_H3, 0.0));
+		if (u / cp_H3 > 7.0)
+		{
+			uz = Velosity_1(u, cp_H3);
+			nu_H3 = (rho_H3 * uz * sigma(uz)) / Kn_;
+		}
+		else
+		{
+			nu_H3 = (rho_H3 * MK.int_1(u, cp_H3)) / Kn_;        // Пробуем вычислять интеграллы численно
+		}
+
+		u = sqrt(kvv(-v * LOS_x - u_H4, -v * LOS_y - v_H4, 0.0));
+		if (u / cp_H4 > 7.0)
+		{
+			uz = Velosity_1(u, cp_H4);
+			nu_H4 = (rho_H4 * uz * sigma(uz)) / Kn_;
+		}
+		else
+		{
+			nu_H4 = (rho_H4 * MK.int_1(u, cp_H4)) / Kn_;        // Пробуем вычислять интеграллы численно
+		}
+
+		nu_H = nu_H3 + nu_H4;
+
+		
+
+
+		S = S * exp(-nu_ex * ds / v);
+
+		jENA = jENA + nu_H * maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) * v * S * ds;
+
+		/*cout << rho_p << " " << rho_H3 << " " << rho_H4 << "  " << nu_H << " " << nu_ex << endl;
+		cout << maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) << " " << S << endl;
+		cout << "------------------" << endl;*/
+
+		// Продвигаемся
+		x0 = x0 + LOS_x * ds;
+		y0 = y0 + LOS_y * ds;
+	}
+
+	cout << "END ENA   " << x0 << " " << y0 << endl;
+	cout << v << " " << jENA << endl;
+}
+
 void Setka::Read_file_for_FCMHD(void)
 {
-	std::ifstream file("FCMHD_2.1_out.bin", std::ios::binary);
+	std::ifstream file("FCMHD_1.4_out.bin", std::ios::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Error opening file: FCMHD_1.8_out.bin");
 	}

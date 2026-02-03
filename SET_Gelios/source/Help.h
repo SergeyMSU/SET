@@ -140,6 +140,10 @@ void Vector_product(const double& a1, const double& a2, const double& a3,//
 	double& x, double& y, double& z);
 //double max(const double& x, const double& y);
 
+double maxwell_distribution(double rho, double cp,
+	double u, double v, double w,
+	double vx, double vy, double vz);
+
 #define Q_gran -90.0              // Маяк Q
 #define Velosity_inf -2.54338 //-4.54127 //-2.54127
 #define M_inf 1.97009

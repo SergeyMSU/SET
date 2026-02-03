@@ -163,6 +163,7 @@ public:
 	void Inizialization(void);
 
 	void Write_file_for_FCMHD(void);
+	void Culc_ENA(Setka* SS3);
 	void Read_file_for_FCMHD(void);
 	void friend Pereinterpol(Setka* S1, Setka* S2);
 

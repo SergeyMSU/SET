@@ -21,6 +21,27 @@ void polar_provorot(const double& phi, double& u, double& v)
 	return;
 }
 
+double maxwell_distribution(double rho, double cp,
+	double u, double v, double w,
+	double vx, double vy, double vz)
+{
+	// Квадрат относительной скорости
+	double dvx = vx - u;
+	double dvy = vy - v;
+	double dvz = vz - w;
+	double v_sq = dvx * dvx + dvy * dvy + dvz * dvz;
+
+	// Нормировочная константа
+	double norm = rho / (pi * sqrt(pi) * cp * cp * cp);
+
+	// Экспоненциальная часть
+	double exponent = exp(-v_sq / (cp * cp));
+
+	return norm * exponent;
+}
+
+
+
 //double max(const double& x, const double& y)
 //{
 //	if (x >= y)
