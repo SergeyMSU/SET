@@ -1566,152 +1566,452 @@ void Setka::Write_file_for_FCMHD(void)
 
 }
 
+
+double velocity_to_energy(double v) // безразмерная скорость в эВ
+{
+	double kms = 0.0963358;    // 1 км/с
+	return kv(v / kms) * 5.226 * 0.001;
+}
+
+// Функция для создания массива энергий из массива скоростей
+std::vector<double> create_energy_from_velocity(const std::vector<double>& v_mas, int N) 
+{
+	std::vector<double> energy_mas(N);
+	for (int i = 0; i < N; i++) 
+	{
+		energy_mas[i] = velocity_to_energy(v_mas[i]);
+	}
+	return energy_mas;
+}
+
+// Функция линейной интерполяции
+double linear_interpolate(double x, const std::vector<double>& x_arr,
+	const std::vector<double>& y_arr) {
+	// Если x за пределами массива, возвращаем крайние значения
+	if (x <= x_arr[0]) return y_arr[0];
+	if (x >= x_arr.back()) return y_arr.back();
+
+	// Находим индекс i такой, что x_arr[i] <= x < x_arr[i+1]
+	auto it = std::upper_bound(x_arr.begin(), x_arr.end(), x);
+	int i = std::distance(x_arr.begin(), it) - 1;
+
+	// Линейная интерполяция
+	double x0 = x_arr[i];
+	double x1 = x_arr[i + 1];
+	double y0 = y_arr[i];
+	double y1 = y_arr[i + 1];
+
+	return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+
+
 void Setka::Culc_ENA(Setka* SS3)
 {
-	double LOS_x = 1.0;   // Направление интегрирования
-	double LOS_y = 2.0;
-
-	// Задаём значения
-	double ae = 0.00313166;    // 1 ае
-	double kms = 0.0963358;    // 1 км/с
-
-	double x0 = 0.0;
-	double y0 = 0.0;
-
-	double a = 0.0;   // Вспомогательная переменная
-	double S = 0.0;   // Поглощение ENA
-	double jENA = 0.0;
-	int b;
-	double rho_p, p_p, u_p, v_p, cp_p;
-	double rho_H3, p_H3, u_H3, v_H3, cp_H3;
-	double rho_H4, p_H4, u_H4, v_H4, cp_H4;
-	double u, uz, nu_ex, nu_H, nu_H3, nu_H4;
-
-	// На всякий случай нормируем LOS
-	a = sqrt(kvv(0.0, LOS_x, LOS_y));   
-	LOS_x /= a;
-	LOS_y /= a;
-
-	// Задаём начальное положение (на 2 АЕ)
-	x0 = x0 + 5.0 * LOS_x * ae;
-	y0 = y0 + 5.0 * LOS_y * ae;
-
-	double v = 100 * kms;   // Скорость, для которой считаем поток
-	double ds = ae / 3.0;   // Шаг интегрирования
-	S = 1.0;
-	jENA = 0.0;
-	x0 = x0 + LOS_x * ds / 2.0;
-	y0 = y0 + LOS_y * ds / 2.0;
-	MKmethod MK = MKmethod();
-
-	// Цикл интегрирования
-	while (true)
+	
+	// Считываем ESA данные
+	const int N_COLUMNS = 6;  // 6 ESA настроек
+	const int N_ROWS = 80;    // 80 строк в каждом файле
+	// Создаем двумерные массивы для хранения данных
+	std::vector<std::vector<double>> energies(N_COLUMNS, std::vector<double>(N_ROWS));
+	std::vector<std::vector<double>> responses(N_COLUMNS, std::vector<double>(N_ROWS));
+	if (false)
 	{
-		Cell* A = this->Find_cell(b, x0, y0);
-		if (b == 0)
-		{
-			cout << "! END " << x0 << " " <<  y0 << endl;
-			break;
+
+		// Считываем T_energies.txt
+		std::ifstream energies_file("T_energies.txt");
+		if (!energies_file.is_open()) {
+			std::cerr << "Ошибка: не удалось открыть файл T_energies.txt" << std::endl;
+			exit(-1);
 		}
 
-		if (A->type == Cell_type::C_4 || A->type == Cell_type::C_5)
-		{
-			double xx, yy;
-			A->Get_Center(xx, yy);
-			cout << "END ZONE " << x0 << " " << y0 << " " << b << " " << xx << " " << yy << endl;
-			cout << (int)(A->type) << " " << A->belong(x0, y0) << endl;
-			cout << A->contour[0]->x << " " << A->contour[0]->y << endl;
-			cout << A->contour[1]->x << " " << A->contour[1]->y << endl;
-			cout << A->contour[2]->x << " " << A->contour[2]->y << endl;
-			cout << A->contour[3]->x << " " << A->contour[3]->y << endl;
-			// Надо для каждой грани вывести её центр и нормаль, чтобы посмотреть, всё ли правильно в этой ячейке
-			// нормали должны быть внешние!
+		std::cout << "Чтение T_energies.txt..." << std::endl;
 
+		std::string line;
+		int row = 0;
+		while (std::getline(energies_file, line) && row < N_ROWS) {
+			std::stringstream ss(line);
 
-			break;
+			// Читаем 6 значений в строке
+			for (int col = 0; col < N_COLUMNS; col++) {
+				if (!(ss >> energies[col][row])) {
+					std::cerr << "Ошибка чтения данных в строке " << row + 1
+						<< ", столбце " << col + 1 << std::endl;
+					exit(-1);
+				}
+			}
+			row++;
 		}
 
-		// Получаем параметры плазмы и водорода в ячейке
-		rho_p = A->par[0].ro;
-		p_p = A->par[0].p;
-		u_p = A->par[0].u;
-		v_p = A->par[0].v;
-		cp_p = sqrt(p_p / rho_p);
+		energies_file.close();
 
-		rho_H3 = A->par[0].H_n[2] * 3.0;
-		p_H3 = 0.5 * rho_H3 * A->par[0].H_T[2];
-		u_H3 = A->par[0].H_u[2];
-		v_H3 = A->par[0].H_v[2];
-		cp_H3 = sqrt(p_H3 / rho_H3);
-
-		rho_H4 = A->par[0].H_n[3] * 3.0;
-		p_H4 = 0.5 * rho_H4 * A->par[0].H_T[3];
-		u_H4 = A->par[0].H_u[3];
-		v_H4 = A->par[0].H_v[3];
-		cp_H4 = sqrt(p_H4 / rho_H4);
-
-		
-
-		// Считаем частоты
-
-		u = sqrt(kvv(-v * LOS_x - u_p, -v * LOS_y - v_p, 0.0));
-		if (u / cp_p > 7.0)
-		{
-			uz = Velosity_1(u, cp_p);
-			nu_ex = (rho_p * uz * sigma(uz)) / Kn_;
-		}
-		else
-		{
-			nu_ex = (rho_p * MK.int_1(u, cp_p)) / Kn_;        // Пробуем вычислять интеграллы численно
+		if (row != N_ROWS) {
+			std::cout << "Предупреждение: прочитано " << row << " строк вместо " << N_ROWS << std::endl;
 		}
 
-		u = sqrt(kvv(-v * LOS_x - u_H3, -v * LOS_y - v_H3, 0.0));
-		if (u / cp_H3 > 7.0)
-		{
-			uz = Velosity_1(u, cp_H3);
-			nu_H3 = (rho_H3 * uz * sigma(uz)) / Kn_;
-		}
-		else
-		{
-			nu_H3 = (rho_H3 * MK.int_1(u, cp_H3)) / Kn_;        // Пробуем вычислять интеграллы численно
+		// Считываем T_triples.txt
+		std::ifstream triples_file("T_triples.txt");
+		if (!triples_file.is_open()) {
+			std::cerr << "Ошибка: не удалось открыть файл T_triples.txt" << std::endl;
+			exit(-1);
 		}
 
-		u = sqrt(kvv(-v * LOS_x - u_H4, -v * LOS_y - v_H4, 0.0));
-		if (u / cp_H4 > 7.0)
-		{
-			uz = Velosity_1(u, cp_H4);
-			nu_H4 = (rho_H4 * uz * sigma(uz)) / Kn_;
+		std::cout << "Чтение T_triples.txt..." << std::endl;
+
+		row = 0;
+		while (std::getline(triples_file, line) && row < N_ROWS) {
+			std::stringstream ss(line);
+
+			// Читаем 6 значений в строке
+			for (int col = 0; col < N_COLUMNS; col++) {
+				if (!(ss >> responses[col][row])) {
+					std::cerr << "Ошибка чтения данных в строке " << row + 1
+						<< ", столбце " << col + 1 << std::endl;
+					exit(-1);
+				}
+			}
+			row++;
 		}
-		else
+
+		triples_file.close();
+
+		if (row != N_ROWS) 
 		{
-			nu_H4 = (rho_H4 * MK.int_1(u, cp_H4)) / Kn_;        // Пробуем вычислять интеграллы численно
+			std::cout << "Preduprezhdenie: prochitano  " << row << " strok vmesto " << N_ROWS << std::endl;
 		}
 
-		nu_H = nu_H3 + nu_H4;
+		// Выводим информацию о загруженных данных
+		std::cout << "\nDannye uspeshno zagruzheny:" << std::endl;
+		std::cout << "==========================" << std::endl;
 
-		
+		// Показываем статистику для каждого ESA
+		for (int esa = 0; esa < N_COLUMNS; esa++) {
+			std::cout << "\nESA " << esa + 1 << ":" << std::endl;
+			std::cout << "  Energii: ot " << energies[esa][0] << " do "
+				<< energies[esa][N_ROWS - 1] << " eV" << std::endl;
 
+			// Находим минимальный и максимальный отклик
+			double min_resp = responses[esa][0];
+			double max_resp = responses[esa][0];
+			for (int i = 1; i < N_ROWS; i++) {
+				if (responses[esa][i] < min_resp) min_resp = responses[esa][i];
+				if (responses[esa][i] > max_resp) max_resp = responses[esa][i];
+			}
 
-		S = S * exp(-nu_ex * ds / v);
-
-		jENA = jENA + nu_H * maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) * v * S * ds;
-
-		/*cout << rho_p << " " << rho_H3 << " " << rho_H4 << "  " << nu_H << " " << nu_ex << endl;
-		cout << maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) << " " << S << endl;
-		cout << "------------------" << endl;*/
-
-		// Продвигаемся
-		x0 = x0 + LOS_x * ds;
-		y0 = y0 + LOS_y * ds;
+			std::cout << "  Otklik: min = " << std::scientific << min_resp
+				<< ", max = " << max_resp << std::fixed << std::endl;
+		}
 	}
 
-	cout << "END ENA   " << x0 << " " << y0 << endl;
-	cout << v << " " << jENA << endl;
+
+	std::ofstream outFile2("jENA_angle_3.10.txt");
+
+	for (double the = 0.0001; the < pi; the = the + pi / 360.0)
+	{
+		//double the = pi / 2.0 + pi/1000.0;
+		double LOS_x = cos(the);   // Направление интегрирования
+		double LOS_y = sin(the);
+
+		// Задаём значения
+		double ae = 0.00313166;    // 1 ае
+		double kms = 0.0963358;    // 1 км/с
+
+		double x0 = 0.0;
+		double y0 = 0.0;
+
+		double a = 0.0;   // Вспомогательная переменная
+		double S = 0.0;   // Поглощение ENA
+		double jENA = 0.0;
+		int b;
+		double rho_p, p_p, u_p, v_p, cp_p;
+		double rho_H3, p_H3, u_H3, v_H3, cp_H3;
+		double rho_H4, p_H4, u_H4, v_H4, cp_H4;
+		double u, uz, nu_ex, nu_H, nu_H3, nu_H4;
+
+		// На всякий случай нормируем LOS
+		a = sqrt(kvv(0.0, LOS_x, LOS_y));
+		LOS_x /= a;
+		LOS_y /= a;
+
+		// Задаём начальное положение (на 2 АЕ)
+		x0 = x0 + 5.0 * LOS_x * ae;
+		y0 = y0 + 5.0 * LOS_y * ae;
+
+		int N = 1000;
+		double vL = 1 * kms;   // Скорость, для которой считаем поток
+		double vR = 1000 * kms;   // Скорость, для которой считаем поток
+		std::vector<double> v_mas(N);
+		std::vector<double> jENA_mas(N);
+		std::vector<double> S_mas(N);
+		//double v = 100 * kms;   // Скорость, для которой считаем поток
+		double ds = ae / 6.0;   // Шаг интегрирования
+		//S = 1.0;
+		//jENA = 0.0;
+		x0 = x0 + LOS_x * ds / 2.0;
+		y0 = y0 + LOS_y * ds / 2.0;
+		MKmethod MK = MKmethod();
+
+		double step = (vR - vL) / N;
+
+		// Заполняем массив координатами центров ячеек
+		for (int i = 0; i < N; ++i)
+		{
+			v_mas[i] = vL + (i + 0.5) * step;
+			S_mas[i] = 1.0;
+			jENA_mas[i] = 0.0;
+
+		}
+
+		// Цикл интегрирования
+		Cell* A, * Ado;
+		A = nullptr;
+
+		while (true)
+		{
+			Ado = A;
+			bool bb = false;
+			if (Ado != nullptr)
+			{
+				if (Ado->belong(x0, y0) == true)
+				{
+					bb = true;
+				}
+
+				if (bb == false)
+				{
+					for (auto& i : Ado->Grans)
+					{
+						if (i->Sosed != nullptr)
+						{
+							if (i->Sosed->belong(x0, y0) == true)
+							{
+								A = i->Sosed;
+								bb = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			if (bb == false)
+			{
+				A = this->Find_cell(b, x0, y0);
+				if (b == 0)
+				{
+					//cout << "! END " << x0 << " " << y0 << endl;
+					break;
+				}
+			}
+
+			if (A->type == Cell_type::C_4 || A->type == Cell_type::C_5)
+			{
+				double xx, yy;
+				A->Get_Center(xx, yy);
+				cout << "END ZONE " << x0 << " " << y0 << " " << b << " " << xx << " " << yy << endl;
+				break;
+				cout << (int)(A->type) << " " << A->belong(x0, y0) << endl;
+				cout << A->contour[0]->x << " " << A->contour[0]->y << endl;
+				cout << A->contour[1]->x << " " << A->contour[1]->y << endl;
+				cout << A->contour[2]->x << " " << A->contour[2]->y << endl;
+				cout << A->contour[3]->x << " " << A->contour[3]->y << endl;
+				// Надо для каждой грани вывести её центр и нормаль, чтобы посмотреть, всё ли правильно в этой ячейке
+				// нормали должны быть внешние!
+				A->Grans[0]->Get_Center(xx, yy);
+				cout << "1 gran koordinate: " << xx << " " << yy << endl;
+				A->Grans[0]->Get_normal(xx, yy);
+				cout << "normal: " << xx << " " << yy << endl;
+
+				A->Grans[1]->Get_Center(xx, yy);
+				cout << "2 gran koordinate: " << xx << " " << yy << endl;
+				A->Grans[1]->Get_normal(xx, yy);
+				cout << "normal: " << xx << " " << yy << endl;
+
+				A->Grans[2]->Get_Center(xx, yy);
+				cout << "3 gran koordinate: " << xx << " " << yy << endl;
+				A->Grans[2]->Get_normal(xx, yy);
+				cout << "normal: " << xx << " " << yy << endl;
+
+				A->Grans[3]->Get_Center(xx, yy);
+				cout << "4 gran koordinate: " << xx << " " << yy << endl;
+				A->Grans[3]->Get_normal(xx, yy);
+				cout << "normal: " << xx << " " << yy << endl;
+
+
+				break;
+			}
+
+			if (true)
+			{
+				// Получаем параметры плазмы и водорода в ячейке
+				rho_p = A->par[0].ro;
+				p_p = A->par[0].p;
+				u_p = A->par[0].u;
+				v_p = A->par[0].v;
+				cp_p = sqrt(p_p / rho_p);
+
+				rho_H3 = A->par[0].H_n[2] * 3.0;
+				p_H3 = 0.5 * rho_H3 * A->par[0].H_T[2];
+				u_H3 = A->par[0].H_u[2];
+				v_H3 = A->par[0].H_v[2];
+				cp_H3 = sqrt(p_H3 / rho_H3);
+
+				rho_H4 = A->par[0].H_n[3] * 3.0;
+				p_H4 = 0.5 * rho_H4 * A->par[0].H_T[3];
+				u_H4 = A->par[0].H_u[3];
+				v_H4 = A->par[0].H_v[3];
+				cp_H4 = sqrt(p_H4 / rho_H4);
+
+
+
+				// Считаем частоты
+
+				for (int i = 0; i < N; ++i)
+				{
+					double v = v_mas[i];
+
+					u = sqrt(kvv(-v * LOS_x - u_p, -v * LOS_y - v_p, 0.0));
+					if (u / cp_p > 7.0)
+					{
+						uz = Velosity_1(u, cp_p);
+						nu_ex = (rho_p * uz * sigma(uz)) / Kn_;
+					}
+					else
+					{
+						nu_ex = (rho_p * MK.int_1(u, cp_p)) / Kn_;        // Пробуем вычислять интеграллы численно
+					}
+
+					u = sqrt(kvv(-v * LOS_x - u_H3, -v * LOS_y - v_H3, 0.0));
+					if (u / cp_H3 > 7.0)
+					{
+						uz = Velosity_1(u, cp_H3);
+						nu_H3 = (rho_H3 * uz * sigma(uz)) / Kn_;
+					}
+					else
+					{
+						nu_H3 = (rho_H3 * MK.int_1(u, cp_H3)) / Kn_;        // Пробуем вычислять интеграллы численно
+					}
+
+					u = sqrt(kvv(-v * LOS_x - u_H4, -v * LOS_y - v_H4, 0.0));
+					if (u / cp_H4 > 7.0)
+					{
+						uz = Velosity_1(u, cp_H4);
+						nu_H4 = (rho_H4 * uz * sigma(uz)) / Kn_;
+					}
+					else
+					{
+						nu_H4 = (rho_H4 * MK.int_1(u, cp_H4)) / Kn_;        // Пробуем вычислять интеграллы численно
+					}
+
+					nu_H = nu_H3 + nu_H4;
+
+
+
+
+					S_mas[i] = S_mas[i] * exp(-nu_ex * ds / v);
+
+					jENA_mas[i] = jENA_mas[i] + nu_H * maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) * v * S_mas[i] * ds;
+				}
+			}
+
+			/*cout << rho_p << " " << rho_H3 << " " << rho_H4 << "  " << nu_H << " " << nu_ex << endl;
+			cout << maxwell_distribution(rho_p, cp_p, u_p, v_p, 0.0, -v * LOS_x, -v * LOS_y, 0.0) << " " << S << endl;
+			cout << "------------------" << endl;*/
+
+			// Продвигаемся
+			x0 = x0 + LOS_x * ds;
+			y0 = y0 + LOS_y * ds;
+		}
+
+		//cout << "END ENA   " << x0 << " " << y0 << endl;
+		//cout << v << " " << jENA << endl;
+
+		if (false)
+		{
+			std::ofstream outFile("jENA_(90)_1.4.txt");
+
+			if (!outFile.is_open()) {
+				std::cerr << "Error iueghuioeyhgiegrergr" << std::endl;
+				exit(-1);
+			}
+
+			for (int i = 0; i < N; ++i)
+			{
+				outFile << kv(v_mas[i] / kms) * 5.226 * 0.000001 << " " << v_mas[i] / kms << " " << jENA_mas[i] << std::endl;
+			}
+		}
+
+		// Создаем массив энергий для jENA_mas
+		std::vector<double> energy_jENA = create_energy_from_velocity(v_mas, N);
+
+		if (false)
+		{
+			// Результаты интегрирования для каждого ESA
+			std::vector<double> integrals(N_COLUMNS, 0.0);
+
+			// Интегрируем для каждого ESA
+			for (int esa = 0; esa < N_COLUMNS; esa++)
+			{
+				double integral = 0.0;
+
+				// Проходим по всем точкам энергий для данного ESA
+				for (int i = 0; i < N_ROWS - 1; i++)
+				{
+					double E1 = energies[esa][i];
+					double E2 = energies[esa][i + 1];
+					double R1 = responses[esa][i];
+					double R2 = responses[esa][i + 1];
+
+					// Интерполируем jENA_mas для энергий E1 и E2
+					double j1 = linear_interpolate(E1, energy_jENA, jENA_mas);
+					double j2 = linear_interpolate(E2, energy_jENA, jENA_mas);
+
+					cout << "Proverka: " << E1 << " " << scientific << j1 << endl;
+
+					// Метод трапеций для интегрирования R(E) * jENA(E) dE
+					double dE = E2 - E1;
+					double avg_product = (R1 * j1 + R2 * j2) / 2.0;
+					integral += avg_product * dE;
+				}
+
+				integrals[esa] = integral;
+
+				cout << "integrals[esa]: " << esa + 1 << ": " << scientific << integral << endl;
+			}
+		}
+
+		double E1 = 15.0;
+		double j1 = linear_interpolate(E1, energy_jENA, jENA_mas);
+
+		double E2 = 29.0;
+		double j2 = linear_interpolate(E2, energy_jENA, jENA_mas);
+
+		double E3 = 55.0;
+		double j3 = linear_interpolate(E3, energy_jENA, jENA_mas);
+
+		double E4 = 110.0;
+		double j4 = linear_interpolate(E4, energy_jENA, jENA_mas);
+
+		double E5 = 209.0;
+		double j5 = linear_interpolate(E5, energy_jENA, jENA_mas);
+
+		double E6 = 439.0;
+		double j6 = linear_interpolate(E6, energy_jENA, jENA_mas);
+
+		double E7 = 872.0;
+		double j7 = linear_interpolate(E7, energy_jENA, jENA_mas);
+
+		double E8 = 1821.0;
+		double j8 = linear_interpolate(E8, energy_jENA, jENA_mas);
+
+		outFile2 << the << " " << j1 << " " << j2 << " " << j3 << " " << j4 << " " << j5 << " " << j6 << " " << j7 << " " << j8 << std::endl;
+	}
+
+	outFile2.close();
 }
 
 void Setka::Read_file_for_FCMHD(void)
 {
-	std::ifstream file("FCMHD_1.4_out.bin", std::ios::binary);
+	std::ifstream file("FCMHD_3.10_out.bin", std::ios::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Error opening file: FCMHD_1.8_out.bin");
 	}

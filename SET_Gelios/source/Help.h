@@ -85,6 +85,9 @@
 #include <string>
 
 
+#include <sstream>
+
+
 #include "Setka.h"
 #include "Rail.h"
 #include "Point.h"

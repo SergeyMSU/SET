@@ -689,8 +689,14 @@ int main(int argc, char** argv)
 
         cout << "Start create new setka" << endl;
         //SS3 = new Setka(350, 200, 150, 500, 350, 160, 5, 5);    // 2
+        // 
         //SS3 = new Setka(700, 400, 150, 500, 200, 400, 5, 5);    // 3
-        SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);       // 1
+        SS3 = new Setka();
+        SS3->Download_Setka_ALL_ALPHA_2_0("SET_3.txt");
+        // 
+        //SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);       // 1
+
+
         for (auto& i : SS3->All_Cells)
         {
             i->renew();
@@ -707,13 +713,15 @@ int main(int argc, char** argv)
         SS3->Proverka();
         cout << "End create new setka" << endl;
         
-        //SS3->Download_surface("save_surf.bin");
-        //SS3->Print_cell2("SS3_all_cell.txt");
+        SS3->Download_surface("save_surf.bin");
+        SS3->Print_cell2("SS3_all_cell.txt");
         cout << "Start pereinterpol" << endl;
         Pereinterpol(SS, SS3);
         //SS3->Init_conditions();
         cout << "End pereinterpol" << endl;
 
+
+        //SS3->Save_Setka_ALL_ALPHA("SET_1.txt");
 
         //SS3->Write_file_for_FCMHD();
         SS3->Read_file_for_FCMHD();
