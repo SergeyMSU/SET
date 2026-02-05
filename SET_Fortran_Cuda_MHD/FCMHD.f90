@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_3.11.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_4.1.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -26,15 +26,15 @@ subroutine Print()
     do i = 1, size(host_Cell_par, 2)
         
         ! Извлекаем координаты центра ячейки
-        x = host_Cell_center(1, i)  ! x-координата
-        y = host_Cell_center(2, i)  ! y-координата
+        x = host_Cell_center(1, i) * 319.319  ! x-координата
+        y = host_Cell_center(2, i) * 319.319  ! y-координата
         
         ! Извлекаем физические величины из host_Cell_par
         ! Согласно описанию: индекс 1 - rho, 2 - vx (u), 3 - vy (v), 5 - p
-        rho = host_Cell_par(1, i)   ! Плотность
-        u   = host_Cell_par(2, i)   ! Компонента скорости по x
-        v   = host_Cell_par(3, i)   ! Компонента скорости по y
-        p   = host_Cell_par(5, i)   ! Давление
+        rho = host_Cell_par(1, i) * 0.073   ! Плотность
+        u   = host_Cell_par(2, i) * 10.3565   ! Компонента скорости по x
+        v   = host_Cell_par(3, i) * 10.3565   ! Компонента скорости по y
+        p   = host_Cell_par(5, i) * 1.30962   ! Давление   10^-13
         
         ! Записываем данные в файл
         ! Используем формат с достаточной точностью
@@ -58,7 +58,7 @@ program MIK
 
     call Set_Storage()
     print*, "Schital"
-    ! call Fill_data()
+    !call Fill_data()
 
     dd = 1.8
 
@@ -70,11 +70,11 @@ program MIK
 
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/4.0) then  ! 45
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
-                !if(the > par_pi_8/5.14285714) then   ! 35
-                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                ! end if
+                if(the > par_pi_8/5.14285714) then   ! 35
+                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                end if
 
 
                 ! 27.5 - 32.5
@@ -114,16 +114,16 @@ program MIK
                 ! end if
 
                 ! 0 - 30
-                if(the > par_pi_8/6.0) then  
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
-                else
-                    dd = 1.0 + 0.8 * (the) / (par_pi_8 /6.0)
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                end if
+                ! if(the > par_pi_8/6.0) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else
+                !     dd = 1.0 + 0.8 * (the) / (par_pi_8 /6.0)
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
 
             end if
         end do
