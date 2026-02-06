@@ -86,7 +86,7 @@ attributes(global) subroutine CUF_MGD_grans(now)
 	time = 100000.0
 	gr = blockDim%x * (blockIdx%x - 1) + threadIdx%x   ! Номер потока
 
-    if (gr > dev_N_gran) return
+    if (gr < 1 .or. gr > dev_N_gran) return
 
     type = dev_Gran_type(gr)
 
@@ -97,9 +97,18 @@ attributes(global) subroutine CUF_MGD_grans(now)
 	s1 = dev_Gran_neighbour(1, gr)
 	s2 = dev_Gran_neighbour(2, gr)
 
+    if (s1 < 1) then
+        print*, "ERROR    s1 < 1"
+    end if
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Хорошо бы ещё проверить выход за пределы справа
+
+    if (s2 < -1) then
+        print*, "ERROR    s2 < -1"
+    end if
+
     cell_centr_s1 = dev_Cell_center(:, s1)
 
-    !if( norm2(cell_centr_s1) < 0.05) return
+    if( norm2(cell_centr_s1) < 0.02) return
 
     gran_centr = dev_Gran_center(:, gr)
     distant = gran_centr - cell_centr_s1
@@ -110,10 +119,6 @@ attributes(global) subroutine CUF_MGD_grans(now)
         metod = 0
     end if
 
-    if(s1 < 1) then
-        print*, "ERROR    s1 < 1"
-        !STOP
-    end if
 
     qqq1 = dev_Cell_par(1:8, s1)
 
@@ -151,6 +156,9 @@ attributes(global) subroutine CUF_MGD_grans(now)
         ! end if
         tvd = .FALSE.
     else
+        if (s2 < 1) then
+            print*, "ERROR    s2 < 1 ", s2, gran_centr(1), gran_centr(2), type
+        end if
         qqq2 = dev_Cell_par(1:8, s2)
         cell_centr_s2 = dev_Cell_center(:, s2)
     end if
@@ -272,6 +280,8 @@ attributes(global) subroutine CUF_MGD_grans_RK2(now, step)
 	s2 = dev_Gran_neighbour(2, gr)
 
     cell_centr_s1 = dev_Cell_center(:, s1)
+    
+    if( norm2(cell_centr_s1) < 0.02) return
 
     !if( norm2(cell_centr_s1) < 0.05) return
 
