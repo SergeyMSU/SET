@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_4.1.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_3.11.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -70,7 +70,8 @@ program MIK
 
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/4.0) then  ! 45
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
-                if(the > par_pi_8/5.14285714) then   ! 35
+                !if(the > par_pi_8/5.14285714) then   ! 35
+                if(the > par_pi_8/4.5) then   ! 40
                     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
                     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
                     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
