@@ -702,18 +702,18 @@ int main(int argc, char** argv)
         //SS3->Download_Setka_ALL_ALPHA_2_0("SET_4.txt");
 
 
-        for (auto& i : SS3->All_Cells)
-        {
-            i->renew();
-        }
-        for (auto& i : SS3->All_Gran)    // Обновим уравнения граней для правильного нахождения пересечения траекторий с ними
-        {
-            i->renew();
-        }
-        for (auto& i : SS3->All_Gran_copy)
-        {
-            i->renew();
-        }
+        //for (auto& i : SS3->All_Cells)
+        //{
+        //    i->renew();
+        //}
+        //for (auto& i : SS3->All_Gran)    // Обновим уравнения граней для правильного нахождения пересечения траекторий с ними
+        //{
+        //    i->renew();
+        //}
+        //for (auto& i : SS3->All_Gran_copy)
+        //{
+        //    i->renew();
+        //}
         SS3->TVD_prepare();
         SS3->Proverka();
         cout << "End create new setka" << endl;
@@ -726,7 +726,7 @@ int main(int argc, char** argv)
         cout << "End pereinterpol" << endl;
 
 
-        SS3->Save_Setka_ALL_ALPHA("SET_5.txt");
+        //SS3->Save_Setka_ALL_ALPHA("SET_5.txt");
 
         SS3->Write_file_for_FCMHD();
         //SS3->Read_file_for_FCMHD();

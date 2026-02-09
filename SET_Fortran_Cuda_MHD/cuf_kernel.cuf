@@ -495,7 +495,7 @@ module MY_CUDA
 			! print*, "START culc"
     		! call flush(6)
 
-			if(.TRUE.) then
+			if(.FALSE.) then
 				call CUF_MGD_grans <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> (dev_now)  ! цикл по граням
 				! call CUF_MGD_grans_test <<< ceiling(real(dev_N_gran)/potok_in_block), potok_in_block>>> ()  ! цикл по граням
 				
