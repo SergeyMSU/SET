@@ -696,7 +696,7 @@ int main(int argc, char** argv)
         // 
         //SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);       // 1
         // 
-        SS3 = new Setka(2800, 1600, 150, 800, 200, 800, 5, 5);    // 5
+        SS3 = new Setka(2000, 1300, 150, 800, 200, 600, 5, 5);    // 5
 
         //SS3 = new Setka();
         //SS3->Download_Setka_ALL_ALPHA_2_0("SET_4.txt");

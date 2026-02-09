@@ -1208,10 +1208,10 @@ void Setka::Write_file_for_FCMHD(void)
 	}
 
 	cout << "B" << endl;
-	ofstream file("FCMHD_4.bin", ios::binary);
+	ofstream file("FCMHD_5.bin", ios::binary);
 	if (!file.is_open())
 	{
-		cout << "ERROR FCMHD_4.bin" << endl;
+		cout << "ERROR FCMHD_5.bin" << endl;
 		exit(-1);
 	}
 	cout << "C" << endl;
