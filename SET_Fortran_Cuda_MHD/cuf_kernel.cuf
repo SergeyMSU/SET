@@ -425,7 +425,7 @@ module MY_CUDA
 		tBlock = dim3(32, 8, 1)
 		
 		now = 2
-		time_step2 = 0.00002_8              ! Шаг по времени (хранится на девайсе)
+		time_step2 = 0.000000002_8              ! Шаг по времени (хранится на девайсе)
 		
 		istat = cudaEventCreate(startEvent)
 		istat = cudaEventCreate(stopEvent)
