@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_4.2.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_5.1.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
