@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_5.1.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_5.2.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -70,12 +70,12 @@ program MIK
 
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/4.0) then  ! 45
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
-                !if(the > par_pi_8/5.14285714) then   ! 35
+                if(the > par_pi_8/5.14285714) then   ! 35
                 ! if(the > par_pi_8/4.5) then   ! 40
-                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                ! end if
+                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                end if
 
 
                 ! 27.5 - 32.5
@@ -115,16 +115,16 @@ program MIK
                 ! end if
 
                 ! 22.5 - 37.5
-                if(the > par_pi_8/4.8) then  
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
-                else if(the > par_pi_8/8.0) then
-                    dd = 1.0 + 0.8 * (the - par_pi_8/8.0) / (par_pi_8 * (1.0/4.8 - 1.0/8.0))
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                end if
+                ! if(the > par_pi_8/4.8) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else if(the > par_pi_8/8.0) then
+                !     dd = 1.0 + 0.8 * (the - par_pi_8/8.0) / (par_pi_8 * (1.0/4.8 - 1.0/8.0))
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
 
                 ! 0 - 30
                 ! if(the > par_pi_8/6.0) then  
