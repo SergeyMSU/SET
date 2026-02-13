@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_5.3.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_3.6.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -58,12 +58,12 @@ program MIK
 
     call Set_Storage()
     print*, "Schital"
-    !call Fill_data()
+    call Fill_data()
 
     dd = 1.8
 
     ! Изменим скорость и плотность на высоких широтах
-    if(.TRUE.) then
+    if(.FALSE.) then
         do i = 1, size(host_Cell_par(1, :)) 
             if( norm2(host_Cell_center(:, i)) < 0.22) then
                 the = polar_angle(host_Cell_center(1, i), host_Cell_center(2, i))
