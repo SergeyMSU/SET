@@ -409,8 +409,10 @@ module MY_CUDA
 		type(cudaEvent) :: startEvent, stopEvent
 		integer(4), device :: dev_now, dev_now2, def_RK_step
 		real :: time_work
+		real(8) :: time_host
 		real(8) :: R_x(3,3), R_z(3,3), temp_vec(3), DR_z(3,3)
 		real(8) :: lambda
+		integer stst
 
 		lambda = dev_lambda
 		dev_Omega_local = dev_Omega
@@ -420,6 +422,9 @@ module MY_CUDA
 		call Set_CUDA()
 		print*, "END_Set_CUDA"
     	call flush(6)
+
+		time_host = 0.0
+		stst = 1
 
 		potok_in_block = 256
 		tBlock = dim3(32, 8, 1)
@@ -441,8 +446,8 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 1500000              ! Лучше чётное число шагов
-		print_step = 50000
+		all_step = 30000              ! Лучше чётное число шагов
+		print_step = 1000000
 
 		print*, "START count"
     	call flush(6)
@@ -462,6 +467,8 @@ module MY_CUDA
 			local1 = dev_time_all
 			local1 = local1 + time_step
 			dev_time_all = local1
+
+			
 
 			if (mod(step, print_step) == 0) then
 				print*, "all time = ", local1
@@ -546,10 +553,14 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 300000) == 0) then
+			if (mod(step, 300) == 0) then
 				call Send_data_to_Host()
-				call Save_Storage()
+				! call Save_Storage()
+				time_host = local1 * 146.262
+				call Print_mult(stst, time_host)
+				stst = stst + 1
 				print*, "SAVE"
+				call flush(6)
 			end if
 	
 		end do

@@ -49,6 +49,56 @@ subroutine Print()
     print*, "Количество записанных ячеек:", size(host_Cell_par, 2)
 end subroutine Print
 
+subroutine Print_mult(step, time)
+    use STORAGE
+    implicit none
+    
+    integer, intent(in) :: step
+    real(8), intent(in) :: time
+    integer :: i, ierr, unit_num, time_unit
+    real(8) :: x, y, rho
+    character(len=256) :: filename
+    character(len=20) :: step_str, time_str
+
+    ! Преобразуем номер шага в строку
+    write(step_str, '(I0)') step
+    ! Преобразуем время в строку (научный формат)
+    write(time_str, '(ES12.5)') time
+    time_str = adjustl(time_str)
+
+    ! Имя файла: output_data_3.5_<номер>.txt
+    filename = 'output_data_3.5_' // trim(step_str) // '.txt'
+
+    open(newunit=unit_num, file=filename, status='replace', action='write', iostat=ierr)
+    if (ierr /= 0) then
+        print*, "Ошибка открытия файла: ", trim(filename)
+        return
+    endif
+
+    ! Заголовки Tecplot
+    write(unit_num, '(A)') 'TITLE = "HP"'
+    write(unit_num, '(A)') 'VARIABLES = x, y, rho'
+    ! Строка ZONE с временем (и STRANDID=1 на всякий случай, но при одиночной загрузке он не обязателен)
+    write(unit_num, '(A, ES12.5)') 'ZONE T="HP", STRANDID=1, SOLUTIONTIME=', time
+
+    print*, "print TIME = ", time
+    open(newunit=time_unit, file="times.txt", status='unknown', position='append', action='write', iostat=ierr)
+    write(time_unit, '(ES12.5)') time 
+    close(time_unit)
+
+    ! Данные
+    do i = 1, size(host_Cell_par, 2), 4
+        x = host_Cell_center(1, i) * 319.319
+        y = host_Cell_center(2, i) * 319.319
+        rho = host_Cell_par(1, i) * 0.073
+        write(unit_num, '(3(ES15.7, 2X))') x, y, rho
+    end do
+
+    close(unit_num)
+    ! print*, "Данные записаны в файл ", trim(filename)
+    ! print*, "Количество ячеек:", size(host_Cell_par, 2)
+end subroutine Print_mult
+
 
 program MIK
     use STORAGE
@@ -149,8 +199,8 @@ program MIK
     call flush(6)
     call CUDA_START_MGD()
 
-    call Print()
+    ! call Print()
 
-    call Save_Storage()
+    ! call Save_Storage()
 
 end program MIK
