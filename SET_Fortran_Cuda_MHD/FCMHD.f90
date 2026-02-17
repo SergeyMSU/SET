@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_3.6.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_5.5.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -108,12 +108,12 @@ program MIK
 
     call Set_Storage()
     print*, "Schital"
-    call Fill_data()
+    ! call Fill_data()
 
     dd = 1.8
 
     ! Изменим скорость и плотность на высоких широтах
-    if(.FALSE.) then
+    if(.TRUE.) then
         do i = 1, size(host_Cell_par(1, :)) 
             if( norm2(host_Cell_center(:, i)) < 0.22) then
                 the = polar_angle(host_Cell_center(1, i), host_Cell_center(2, i))
@@ -127,18 +127,29 @@ program MIK
                 !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
                 ! end if
 
-
-                ! 27.5 - 32.5
-                if(the > par_pi_8/5.53846154) then  
+                ! 29 - 31
+                if(the > par_pi_8/5.80645161) then  
                     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
                     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
                     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
-                else if(the > par_pi_8/6.5454545454545454) then
-                    dd = 1.0 + 0.8 * (the - par_pi_8/6.5454545454545454) / (par_pi_8 * (1.0/5.53846154 - 1.0/6.5454545454545454))
+                else if(the > par_pi_8/6.20689655) then
+                    dd = 1.0 + 0.8 * (the - par_pi_8/6.20689655) / (par_pi_8 * (1.0/5.80645161 - 1.0/6.20689655))
                     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
                     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
                     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
                 end if
+
+                ! ! 27.5 - 32.5
+                ! if(the > par_pi_8/5.53846154) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else if(the > par_pi_8/6.5454545454545454) then
+                !     dd = 1.0 + 0.8 * (the - par_pi_8/6.5454545454545454) / (par_pi_8 * (1.0/5.53846154 - 1.0/6.5454545454545454))
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
 
                 ! 25 - 35
                 ! if(the > par_pi_8/5.14285714) then  
@@ -199,8 +210,8 @@ program MIK
     call flush(6)
     call CUDA_START_MGD()
 
-    ! call Print()
+    call Print()
 
-    ! call Save_Storage()
+    call Save_Storage()
 
 end program MIK

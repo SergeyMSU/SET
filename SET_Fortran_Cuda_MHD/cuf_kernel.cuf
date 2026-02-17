@@ -446,8 +446,8 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 30000              ! Лучше чётное число шагов
-		print_step = 1000000
+		all_step = 1500000              ! Лучше чётное число шагов
+		print_step = 50000
 
 		print*, "START count"
     	call flush(6)
@@ -553,7 +553,7 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 300) == 0) then
+			if (mod(step, 100000000) == 0) then
 				call Send_data_to_Host()
 				! call Save_Storage()
 				time_host = local1 * 146.262
