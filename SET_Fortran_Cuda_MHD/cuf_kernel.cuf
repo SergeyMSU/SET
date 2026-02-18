@@ -400,7 +400,7 @@ module MY_CUDA
 	end subroutine Send_data_to_Host
 
 	subroutine CUDA_START_MGD()
-		integer :: step, now, now2, step2
+		integer :: step, now, now2, step2, i, Ncell
 		type(dim3) :: grid, tBlock
 		integer(4):: ierrSync, ierrAsync, nx, ny, ijk, istat, potok_in_block, all_step, print_step
 		real(8) :: local1, rotate_velosity_local(3), alpha
@@ -408,11 +408,11 @@ module MY_CUDA
 		real(8) :: point(3), dev_Omega_local
 		type(cudaEvent) :: startEvent, stopEvent
 		integer(4), device :: dev_now, dev_now2, def_RK_step
-		real :: time_work
-		real(8) :: time_host
+		real :: time_work, x0, y0, dx, dy
+		real(8) :: time_host, rho1, rho2
 		real(8) :: R_x(3,3), R_z(3,3), temp_vec(3), DR_z(3,3)
 		real(8) :: lambda
-		integer stst
+		integer stst, point1, point2
 
 		lambda = dev_lambda
 		dev_Omega_local = dev_Omega
@@ -422,6 +422,46 @@ module MY_CUDA
 		call Set_CUDA()
 		print*, "END_Set_CUDA"
     	call flush(6)
+
+
+		print*, "find Points"
+		! Находим нужные точки для вывода
+		! Поиск ячейки с минимальным квадратом расстояния
+		x0 = -200.0/319.319
+		y0 = 220.0/319.319
+		rho2 = 10000000.0
+		Ncell = dev_N_cell
+		do i = 1, Ncell
+			dx =  host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point1 = i
+			end if
+		end do
+
+		x0 = 55.0/319.319
+		y0 = 110.0/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point2 = i
+			end if
+		end do
+
+		print*, "find Points = ", point1, point2
+		call flush(6)
 
 		time_host = 0.0
 		stst = 1
@@ -446,7 +486,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 1500000              ! Лучше чётное число шагов
+		all_step = 500000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -553,7 +593,14 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 100000000) == 0) then
+			if (mod(step, 1) == 0) then
+				time_host = local1 * 146.262
+				rho1 = dev_Cell_par(1, point1)
+				rho2 = dev_Cell_par(1, point2)
+				call write_T_rho(time_host, rho1, rho2)
+			end if
+
+			if (mod(step, 10000) == 0) then
 				call Send_data_to_Host()
 				! call Save_Storage()
 				time_host = local1 * 146.262

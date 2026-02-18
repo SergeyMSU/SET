@@ -43,7 +43,7 @@ module STORAGE
     subroutine Set_Storage()
         real(8) :: vv
         integer(4) :: i
-        open(1, file = "FCMHD_5.bin", FORM = 'BINARY', ACTION = "READ")
+        open(1, file = "FCMHD_4.bin", FORM = 'BINARY', ACTION = "READ")
 
         read(1) host_time_all
         read(1) host_N_cell
@@ -193,7 +193,7 @@ module STORAGE
         real(8) :: cf
 
         ! Открываем файл для записи в бинарном формате
-        open(3, file = "FCMHD_3.5_out.bin", FORM = 'BINARY', ACTION = "READ")
+        open(3, file = "FCMHD_4.1_out.bin", FORM = 'BINARY', ACTION = "READ")
         
         ! Записываем данные в ТОМ ЖЕ порядке, что и при чтении
         read(3) host_time_all

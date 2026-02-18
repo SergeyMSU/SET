@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_5.5.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_4.1.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -67,7 +67,7 @@ subroutine Print_mult(step, time)
     time_str = adjustl(time_str)
 
     ! Имя файла: output_data_3.5_<номер>.txt
-    filename = 'output_data_3.5_' // trim(step_str) // '.txt'
+    filename = 'output_data_4.1_' // trim(step_str) // '.txt'
 
     open(newunit=unit_num, file=filename, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
@@ -87,7 +87,7 @@ subroutine Print_mult(step, time)
     close(time_unit)
 
     ! Данные
-    do i = 1, size(host_Cell_par, 2), 4
+    do i = 1, size(host_Cell_par, 2), 3
         x = host_Cell_center(1, i) * 319.319
         y = host_Cell_center(2, i) * 319.319
         rho = host_Cell_par(1, i) * 0.073
@@ -99,6 +99,21 @@ subroutine Print_mult(step, time)
     ! print*, "Количество ячеек:", size(host_Cell_par, 2)
 end subroutine Print_mult
 
+subroutine write_T_rho(T, rho1, rho2)
+    implicit none
+    real(8), intent(in) :: T, rho1, rho2          ! Входные аргументы двойной точности
+    integer, parameter :: out_unit = 10    ! Номер логического устройства
+    character(*), parameter :: filename = "rhoT_4.1.txt"   ! Имя файла
+
+    ! Открыть файл для дозаписи (если не существует – будет создан)
+    open(unit=out_unit, file=filename, position='append', action='write', status='unknown')
+    
+    ! Записать числа в файл в экспоненциальном формате с 15 знаками мантиссы
+    write(out_unit, '(3es23.15)') T, rho1, rho2
+    
+    ! Закрыть файл
+    close(out_unit)
+end subroutine write_T_rho
 
 program MIK
     use STORAGE
@@ -108,12 +123,12 @@ program MIK
 
     call Set_Storage()
     print*, "Schital"
-    ! call Fill_data()
+    call Fill_data()
 
     dd = 1.8
 
     ! Изменим скорость и плотность на высоких широтах
-    if(.TRUE.) then
+    if(.FALSE.) then
         do i = 1, size(host_Cell_par(1, :)) 
             if( norm2(host_Cell_center(:, i)) < 0.22) then
                 the = polar_angle(host_Cell_center(1, i), host_Cell_center(2, i))
@@ -210,8 +225,8 @@ program MIK
     call flush(6)
     call CUDA_START_MGD()
 
-    call Print()
+    !call Print()
 
-    call Save_Storage()
+    !call Save_Storage()
 
 end program MIK
