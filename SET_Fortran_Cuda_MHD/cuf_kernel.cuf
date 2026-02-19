@@ -409,10 +409,12 @@ module MY_CUDA
 		type(cudaEvent) :: startEvent, stopEvent
 		integer(4), device :: dev_now, dev_now2, def_RK_step
 		real :: time_work, x0, y0, dx, dy
-		real(8) :: time_host, rho1, rho2
+		real(8) :: time_host, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9
+		real(8) :: rho10, rho11, rho12, rho13
 		real(8) :: R_x(3,3), R_z(3,3), temp_vec(3), DR_z(3,3)
 		real(8) :: lambda
-		integer stst, point1, point2
+		integer stst, point1, point2, point3, point4, point5, point6, point7, point8
+		integer point9, point10, point11, point12, point13
 
 		lambda = dev_lambda
 		dev_Omega_local = dev_Omega
@@ -427,8 +429,8 @@ module MY_CUDA
 		print*, "find Points"
 		! Находим нужные точки для вывода
 		! Поиск ячейки с минимальным квадратом расстояния
-		x0 = -200.0/319.319
-		y0 = 220.0/319.319
+		x0 = 66.576/319.319
+		y0 = 59.3892/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -444,8 +446,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 55.0/319.319
-		y0 = 110.0/319.319
+		x0 = 66.9747/319.319
+		y0 = 62.1762/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -457,6 +459,182 @@ module MY_CUDA
 			if (rho1 < rho2) then
 				rho2 = rho1
 				point2 = i
+			end if
+		end do
+
+		x0 = 67.2256/319.319
+		y0 = 65.0237/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point3 = i
+			end if
+		end do
+
+		x0 = 67.3538/319.319
+		y0 = 67.8177/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point4 = i
+			end if
+		end do
+
+		x0 = 67.4962/319.319
+		y0 = 70.7169/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point5 = i
+			end if
+		end do
+
+		x0 = 67.5514/319.319
+		y0 = 73.9361/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point6 = i
+			end if
+		end do
+
+		x0 = 67.3363/319.319
+		y0 = 77.0445/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point7 = i
+			end if
+		end do
+
+		x0 = 66.7767/319.319
+		y0 = 80.3757/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point8 = i
+			end if
+		end do
+
+		x0 = 66.296/319.319
+		y0 = 83.7813/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point9 = i
+			end if
+		end do
+
+		x0 = 65.7998/319.319
+		y0 = 87.1056/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point10 = i
+			end if
+		end do
+
+		x0 = 65.138/319.319
+		y0 = 90.334/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point11 = i
+			end if
+		end do
+
+		x0 = 64.2666/319.319
+		y0 = 93.3669/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point12 = i
+			end if
+		end do
+
+		x0 = 62.9648/319.319
+		y0 = 96.1693/319.319
+		rho2 = 10000000.0
+		do i = 1, Ncell
+			dx = host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point13 = i
 			end if
 		end do
 
@@ -486,7 +664,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 500000              ! Лучше чётное число шагов
+		all_step = 3000000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -593,14 +771,25 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 1) == 0) then
+			if (mod(step, 3) == 0) then
 				time_host = local1 * 146.262
 				rho1 = dev_Cell_par(1, point1)
 				rho2 = dev_Cell_par(1, point2)
-				call write_T_rho(time_host, rho1, rho2)
+				rho3 = dev_Cell_par(1, point3)
+				rho4 = dev_Cell_par(1, point4)
+				rho5 = dev_Cell_par(1, point5)
+				rho6 = dev_Cell_par(1, point6)
+				rho7 = dev_Cell_par(1, point7)
+				rho8 = dev_Cell_par(1, point8)
+				rho9 = dev_Cell_par(1, point9)
+				rho10 = dev_Cell_par(1, point10)
+				rho11 = dev_Cell_par(1, point11)
+				rho12 = dev_Cell_par(1, point12)
+				rho13 = dev_Cell_par(1, point13)
+				call write_T_rho(time_host, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13)
 			end if
 
-			if (mod(step, 10000) == 0) then
+			if (mod(step, 100000) == 0) then
 				call Send_data_to_Host()
 				! call Save_Storage()
 				time_host = local1 * 146.262

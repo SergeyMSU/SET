@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_4.1.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_3.5.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -67,7 +67,7 @@ subroutine Print_mult(step, time)
     time_str = adjustl(time_str)
 
     ! Имя файла: output_data_3.5_<номер>.txt
-    filename = 'output_data_4.1_' // trim(step_str) // '.txt'
+    filename = 'output_data_3.5_' // trim(step_str) // '.txt'
 
     open(newunit=unit_num, file=filename, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
@@ -99,17 +99,19 @@ subroutine Print_mult(step, time)
     ! print*, "Количество ячеек:", size(host_Cell_par, 2)
 end subroutine Print_mult
 
-subroutine write_T_rho(T, rho1, rho2)
+subroutine write_T_rho(T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13)
     implicit none
-    real(8), intent(in) :: T, rho1, rho2          ! Входные аргументы двойной точности
+    real(8), intent(in) :: T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8          ! Входные аргументы двойной точности
+    real(8), intent(in) :: rho9, rho10, rho11, rho12, rho13   
     integer, parameter :: out_unit = 10    ! Номер логического устройства
-    character(*), parameter :: filename = "rhoT_4.1.txt"   ! Имя файла
+    character(*), parameter :: filename = "1D_rhoT_3.5.txt"   ! Имя файла
 
     ! Открыть файл для дозаписи (если не существует – будет создан)
     open(unit=out_unit, file=filename, position='append', action='write', status='unknown')
     
     ! Записать числа в файл в экспоненциальном формате с 15 знаками мантиссы
-    write(out_unit, '(3es23.15)') T, rho1, rho2
+    write(out_unit, '(14es23.15)') T, rho1* 0.073, rho2* 0.073, rho3* 0.073, rho4* 0.073, rho5* 0.073, rho6* 0.073, rho7* 0.073, rho8* 0.073 &
+        , rho9* 0.073, rho10* 0.073, rho11* 0.073, rho12* 0.073, rho13* 0.073
     
     ! Закрыть файл
     close(out_unit)
@@ -225,8 +227,8 @@ program MIK
     call flush(6)
     call CUDA_START_MGD()
 
-    !call Print()
+    call Print()
 
-    !call Save_Storage()
+    call Save_Storage()
 
 end program MIK
