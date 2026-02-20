@@ -99,19 +99,20 @@ subroutine Print_mult(step, time)
     ! print*, "Количество ячеек:", size(host_Cell_par, 2)
 end subroutine Print_mult
 
-subroutine write_T_rho(T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13)
+subroutine write_T_rho(T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13, rho14 &
+    , rho15, rho16, rho17)
     implicit none
     real(8), intent(in) :: T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8          ! Входные аргументы двойной точности
-    real(8), intent(in) :: rho9, rho10, rho11, rho12, rho13   
+    real(8), intent(in) :: rho9, rho10, rho11, rho12, rho13   , rho14  , rho15  , rho16  , rho17  
     integer, parameter :: out_unit = 10    ! Номер логического устройства
-    character(*), parameter :: filename = "1D_rhoT_4.1.txt"   ! Имя файла
+    character(*), parameter :: filename = "1D_rhoT_4.1-2.txt"   ! Имя файла
 
     ! Открыть файл для дозаписи (если не существует – будет создан)
     open(unit=out_unit, file=filename, position='append', action='write', status='unknown')
     
     ! Записать числа в файл в экспоненциальном формате с 15 знаками мантиссы
-    write(out_unit, '(14es23.15)') T, rho1* 0.073, rho2* 0.073, rho3* 0.073, rho4* 0.073, rho5* 0.073, rho6* 0.073, rho7* 0.073, rho8* 0.073 &
-        , rho9* 0.073, rho10* 0.073, rho11* 0.073, rho12* 0.073, rho13* 0.073
+    write(out_unit, '(18es23.15)') T, rho1* 0.073, rho2* 0.073, rho3* 0.073, rho4* 0.073, rho5* 0.073, rho6* 0.073, rho7* 0.073, rho8* 0.073 &
+        , rho9* 0.073, rho10* 0.073, rho11* 0.073, rho12* 0.073, rho13* 0.073, rho14* 0.073, rho15* 0.073, rho16* 0.073, rho17* 0.073
     
     ! Закрыть файл
     close(out_unit)

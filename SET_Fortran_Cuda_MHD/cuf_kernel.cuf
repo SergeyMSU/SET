@@ -410,11 +410,11 @@ module MY_CUDA
 		integer(4), device :: dev_now, dev_now2, def_RK_step
 		real :: time_work, x0, y0, dx, dy
 		real(8) :: time_host, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9
-		real(8) :: rho10, rho11, rho12, rho13
+		real(8) :: rho10, rho11, rho12, rho13, rho14, rho15, rho16, rho17
 		real(8) :: R_x(3,3), R_z(3,3), temp_vec(3), DR_z(3,3)
 		real(8) :: lambda
 		integer stst, point1, point2, point3, point4, point5, point6, point7, point8
-		integer point9, point10, point11, point12, point13
+		integer point9, point10, point11, point12, point13, point14, point15, point16, point17
 
 		lambda = dev_lambda
 		dev_Omega_local = dev_Omega
@@ -429,8 +429,9 @@ module MY_CUDA
 		print*, "find Points"
 		! Находим нужные точки для вывода
 		! Поиск ячейки с минимальным квадратом расстояния
-		x0 = 66.576/319.319
-		y0 = 59.3892/319.319
+
+		x0 = 63.2533/319.319
+		y0 = 47.9804/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -446,6 +447,74 @@ module MY_CUDA
 			end if
 		end do
 
+		x0 = 64.2825/319.319
+		y0 = 51.0091/319.319
+		rho2 = 10000000.0
+		Ncell = dev_N_cell
+		do i = 1, Ncell
+			dx =  host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point2 = i
+			end if
+		end do
+
+		x0 = 65.1352/319.319
+		y0 = 54.0965/319.319
+		rho2 = 10000000.0
+		Ncell = dev_N_cell
+		do i = 1, Ncell
+			dx =  host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point3 = i
+			end if
+		end do
+
+		x0 = 65.9291/319.319
+		y0 = 56.8311/319.319
+		rho2 = 10000000.0
+		Ncell = dev_N_cell
+		do i = 1, Ncell
+			dx =  host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point4 = i
+			end if
+		end do
+
+		x0 = 66.576/319.319
+		y0 = 59.3892/319.319
+		rho2 = 10000000.0
+		Ncell = dev_N_cell
+		do i = 1, Ncell
+			dx =  host_Cell_center(1, i)
+			dx = dx - x0
+			dy = host_Cell_center(2, i)
+			dy = dy - y0
+			rho1 = dx*dx + dy*dy
+
+			if (rho1 < rho2) then
+				rho2 = rho1
+				point5 = i
+			end if
+		end do
+
 		x0 = 66.9747/319.319
 		y0 = 62.1762/319.319
 		rho2 = 10000000.0
@@ -458,7 +527,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point2 = i
+				point6 = i
 			end if
 		end do
 
@@ -474,7 +543,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point3 = i
+				point7 = i
 			end if
 		end do
 
@@ -490,7 +559,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point4 = i
+				point8 = i
 			end if
 		end do
 
@@ -506,7 +575,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point5 = i
+				point9 = i
 			end if
 		end do
 
@@ -522,7 +591,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point6 = i
+				point10 = i
 			end if
 		end do
 
@@ -538,7 +607,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point7 = i
+				point11 = i
 			end if
 		end do
 
@@ -554,7 +623,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point8 = i
+				point12 = i
 			end if
 		end do
 
@@ -570,7 +639,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point9 = i
+				point13 = i
 			end if
 		end do
 
@@ -586,7 +655,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point10 = i
+				point14 = i
 			end if
 		end do
 
@@ -602,7 +671,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point11 = i
+				point15 = i
 			end if
 		end do
 
@@ -618,7 +687,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point12 = i
+				point16 = i
 			end if
 		end do
 
@@ -634,7 +703,7 @@ module MY_CUDA
 
 			if (rho1 < rho2) then
 				rho2 = rho1
-				point13 = i
+				point17 = i
 			end if
 		end do
 
@@ -664,7 +733,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 3000000              ! Лучше чётное число шагов
+		all_step = 1000000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -786,7 +855,12 @@ module MY_CUDA
 				rho11 = dev_Cell_par(1, point11)
 				rho12 = dev_Cell_par(1, point12)
 				rho13 = dev_Cell_par(1, point13)
-				call write_T_rho(time_host, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13)
+				rho14 = dev_Cell_par(1, point14)
+				rho15 = dev_Cell_par(1, point15)
+				rho16 = dev_Cell_par(1, point16)
+				rho17 = dev_Cell_par(1, point17)
+				call write_T_rho(time_host, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, rho10, rho11, rho12, rho13 &
+				, rho14, rho15, rho16, rho17)
 			end if
 
 			if (mod(step, 100000) == 0) then
