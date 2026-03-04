@@ -498,8 +498,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 66.576/319.319
-		y0 = 59.3892/319.319
+		! x0 = 66.576/319.319
+		! y0 = 59.3892/319.319
+		x0 = 66.368/319.319
+		y0 = 59.4272/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -515,8 +517,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 66.9747/319.319
-		y0 = 62.1762/319.319
+		! x0 = 66.9747/319.319
+		! y0 = 62.1762/319.319
+		x0 = 66.765/319.319
+		y0 = 62.1807/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -733,7 +737,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 1000000              ! Лучше чётное число шагов
+		all_step = 3000000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -840,7 +844,7 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 3) == 0) then
+			if (mod(step, 5000000) == 0) then
 				time_host = local1 * 146.262
 				rho1 = dev_Cell_par(1, point1)
 				rho2 = dev_Cell_par(1, point2)
@@ -863,7 +867,7 @@ module MY_CUDA
 				, rho14, rho15, rho16, rho17)
 			end if
 
-			if (mod(step, 100000) == 0) then
+			if (mod(step, 100000) == 0 .and. step >= 1500000) then
 				call Send_data_to_Host()
 				! call Save_Storage()
 				time_host = local1 * 146.262

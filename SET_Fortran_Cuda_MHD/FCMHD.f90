@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_4.1.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_5.4.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -67,7 +67,7 @@ subroutine Print_mult(step, time)
     time_str = adjustl(time_str)
 
     ! Имя файла: output_data_3.5_<номер>.txt
-    filename = 'output_data_4.1_' // trim(step_str) // '.txt'
+    filename = 'output_data_5.4_' // trim(step_str) // '.txt'
 
     open(newunit=unit_num, file=filename, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
@@ -82,7 +82,7 @@ subroutine Print_mult(step, time)
     write(unit_num, '(A, ES12.5)') 'ZONE T="HP", STRANDID=1, SOLUTIONTIME=', time
 
     print*, "print TIME = ", time
-    open(newunit=time_unit, file="times.txt", status='unknown', position='append', action='write', iostat=ierr)
+    open(newunit=time_unit, file="times_5.4.txt", status='unknown', position='append', action='write', iostat=ierr)
     write(time_unit, '(ES12.5)') time 
     close(time_unit)
 
@@ -105,7 +105,7 @@ subroutine write_T_rho(T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, 
     real(8), intent(in) :: T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8          ! Входные аргументы двойной точности
     real(8), intent(in) :: rho9, rho10, rho11, rho12, rho13   , rho14  , rho15  , rho16  , rho17  
     integer, parameter :: out_unit = 10    ! Номер логического устройства
-    character(*), parameter :: filename = "1D_rhoT_4.1-2.txt"   ! Имя файла
+    character(*), parameter :: filename = "1D_rhoT_5.4.txt"   ! Имя файла
 
     ! Открыть файл для дозаписи (если не существует – будет создан)
     open(unit=out_unit, file=filename, position='append', action='write', status='unknown')
@@ -126,12 +126,12 @@ program MIK
 
     call Set_Storage()
     print*, "Schital"
-    call Fill_data()
+    ! call Fill_data()
 
     dd = 1.8
 
     ! Изменим скорость и плотность на высоких широтах
-    if(.FALSE.) then
+    if(.TRUE.) then
         do i = 1, size(host_Cell_par(1, :)) 
             if( norm2(host_Cell_center(:, i)) < 0.22) then
                 the = polar_angle(host_Cell_center(1, i), host_Cell_center(2, i))
@@ -140,22 +140,25 @@ program MIK
                 !if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
                 ! if(the > par_pi_8/5.14285714) then   ! 35
                 ! if(the > par_pi_8/4.5) then   ! 40
+                ! if(the > par_pi_8/3.2727272727272727) then   ! 55
+                ! if(the > par_pi_8/2.0) then   ! 90
+                ! if(the > par_pi_8/1.33333333333333) then   ! 135
                 !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
                 !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
                 !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
                 ! end if
 
                 ! 29 - 31
-                if(the > par_pi_8/5.80645161) then  
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
-                else if(the > par_pi_8/6.20689655) then
-                    dd = 1.0 + 0.8 * (the - par_pi_8/6.20689655) / (par_pi_8 * (1.0/5.80645161 - 1.0/6.20689655))
-                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                end if
+                ! if(the > par_pi_8/5.80645161) then  
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                ! else if(the > par_pi_8/6.20689655) then
+                !     dd = 1.0 + 0.8 * (the - par_pi_8/6.20689655) / (par_pi_8 * (1.0/5.80645161 - 1.0/6.20689655))
+                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                ! end if
 
                 ! ! 27.5 - 32.5
                 ! if(the > par_pi_8/5.53846154) then  
@@ -170,16 +173,16 @@ program MIK
                 ! end if
 
                 ! 25 - 35
-                ! if(the > par_pi_8/5.14285714) then  
-                !     host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
-                !     host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
-                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
-                ! else if(the > par_pi_8/7.2) then
-                !     dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
-                !     host_Cell_par(2, i) = host_Cell_par(2, i) * dd
-                !     host_Cell_par(3, i) = host_Cell_par(3, i) * dd
-                !     host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
-                ! end if
+                if(the > par_pi_8/5.14285714) then  
+                    host_Cell_par(2, i) = host_Cell_par(2, i) * 1.8
+                    host_Cell_par(3, i) = host_Cell_par(3, i) * 1.8
+                    host_Cell_par(1, i) = host_Cell_par(1, i) / (1.8)**2
+                else if(the > par_pi_8/7.2) then
+                    dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+                    host_Cell_par(2, i) = host_Cell_par(2, i) * dd
+                    host_Cell_par(3, i) = host_Cell_par(3, i) * dd
+                    host_Cell_par(1, i) = host_Cell_par(1, i) / (dd)**2
+                end if
 
                 ! 20 - 40
                 ! if(the > par_pi_8/4.5) then  
