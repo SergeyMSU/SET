@@ -430,8 +430,8 @@ module MY_CUDA
 		! Находим нужные точки для вывода
 		! Поиск ячейки с минимальным квадратом расстояния
 
-		x0 = 63.2533/319.319
-		y0 = 47.9804/319.319
+		x0 = 72.1836/319.319
+		y0 = 38.7675/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -447,8 +447,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 64.2825/319.319
-		y0 = 51.0091/319.319
+		x0 = 74.1586/319.319
+		y0 = 43.048/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -464,8 +464,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 65.1352/319.319
-		y0 = 54.0965/319.319
+		x0 = 75.7992/319.319
+		y0 = 47.0446/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -481,8 +481,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 65.9291/319.319
-		y0 = 56.8311/319.319
+		x0 = 77.0808/319.319
+		y0 = 51.7549/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -500,8 +500,8 @@ module MY_CUDA
 
 		! x0 = 66.576/319.319
 		! y0 = 59.3892/319.319
-		x0 = 66.368/319.319
-		y0 = 59.4272/319.319
+		x0 = 78.2087/319.319
+		y0 = 57.4643/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -519,8 +519,8 @@ module MY_CUDA
 
 		! x0 = 66.9747/319.319
 		! y0 = 62.1762/319.319
-		x0 = 66.765/319.319
-		y0 = 62.1807/319.319
+		x0 = 78.7727/319.319
+		y0 = 63.3165/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -535,8 +535,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 67.2256/319.319
-		y0 = 65.0237/319.319
+		x0 = 78.9265/319.319
+		y0 = 69.3114/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -551,8 +551,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 67.3538/319.319
-		y0 = 67.8177/319.319
+		x0 = 77.6961/319.319
+		y0 = 81.7294/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -567,8 +567,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 67.4962/319.319
-		y0 = 70.7169/319.319
+		x0 = 75.4403/319.319
+		y0 = 89.4371/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -583,8 +583,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 67.5514/319.319
-		y0 = 73.9361/319.319
+		x0 = 72.7744/319.319
+		y0 = 97.1448/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -599,8 +599,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 67.3363/319.319
-		y0 = 77.0445/319.319
+		x0 = 69.6471/319.319
+		y0 = 104.282/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -615,8 +615,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 66.7767/319.319
-		y0 = 80.3757/319.319
+		x0 = 66.6223/319.319
+		y0 = 109.42/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -631,8 +631,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 66.296/319.319
-		y0 = 83.7813/319.319
+		x0 = 62.9824/319.319
+		y0 = 114.559/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -647,8 +647,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 65.7998/319.319
-		y0 = 87.1056/319.319
+		x0 = 59.5987/319.319
+		y0 = 119.269/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -663,8 +663,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 65.138/319.319
-		y0 = 90.334/319.319
+		x0 = 55.7024/319.319
+		y0 = 124.122/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -679,8 +679,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 64.2666/319.319
-		y0 = 93.3669/319.319
+		x0 = 50.5448/319.319
+		y0 = 130.03/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -695,8 +695,8 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 62.9648/319.319
-		y0 = 96.1693/319.319
+		x0 = 43.8266/319.319
+		y0 = 137.228/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -737,7 +737,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 3000000              ! Лучше чётное число шагов
+		all_step = 2000000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -758,6 +758,13 @@ module MY_CUDA
 			local1 = dev_time_all
 			local1 = local1 + time_step
 			dev_time_all = local1
+
+			if(step > all_step - 100000) then
+				if(abs( local1 * 146.262 - real(nint(local1 * 146.262)) ) < 0.0001) then
+					print*, "EXIT     time = ", local1 * 146.262
+					EXIT
+				end if
+			end if
 
 			
 
@@ -844,7 +851,7 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 5000000) == 0) then
+			if (mod(step, 1) == 0 .and. step > 1000000) then
 				time_host = local1 * 146.262
 				rho1 = dev_Cell_par(1, point1)
 				rho2 = dev_Cell_par(1, point2)
@@ -867,9 +874,9 @@ module MY_CUDA
 				, rho14, rho15, rho16, rho17)
 			end if
 
-			if (mod(step, 100000) == 0 .and. step >= 1500000) then
+			if ( (mod(step, 10000) == 0 .and. step > 2000000) .or. mod(step, 200000) == 0) then
 				call Send_data_to_Host()
-				! call Save_Storage()
+				call Save_Storage()
 				time_host = local1 * 146.262
 				call Print_mult(stst, time_host)
 				stst = stst + 1

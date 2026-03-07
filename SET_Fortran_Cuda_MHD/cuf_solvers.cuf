@@ -246,7 +246,7 @@ attributes(global) subroutine CUF_MGD_grans_RK2(now, step)
 	integer, intent(in) :: now, step
     ! step = 1 или step = 2
     integer(4) :: n_disc, gr, metod, s1, s2, ss1, ss2, type, i
-    real(8) :: time, dist, wc, dsl, dsp, dsc, aa, bb, cc, the
+    real(8) :: time, dist, wc, dsl, dsp, dsc, aa, bb, cc, the, rho_init, p_init
     real(8) :: POTOK(8), distant(3), Gran_normal(3), square, rast(3)
     real(8) :: qqq1(8), qqq2(8), qqq11(8), qqq22(8)
     real(8) :: qqq1_TVD(8), qqq2_TVD(8)
@@ -282,6 +282,9 @@ attributes(global) subroutine CUF_MGD_grans_RK2(now, step)
     cell_centr_s1 = dev_Cell_center(:, s1)
     
     if( norm2(cell_centr_s1) < 0.02) return
+
+
+
 
     !if( norm2(cell_centr_s1) < 0.05) return
 
@@ -566,13 +569,13 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
 	integer(4) :: st, i, j
 	real(8) :: qqq(dev_num_param)  ! Переменные в ячейке
 	real(8) :: qqq2(dev_num_param)  ! Переменные в ячейке
-	real(8) :: dist, QQ3
+	real(8) :: dist, QQ3, the
 	real(8) :: POTOK(8), vv(3), rr(3), F(3)
 	real(8) :: time, Volume, sks
 	real(8) :: ro3, u3, v3, w3, p3, bx3, by3, bz3
     real(8) :: rotate_velosity_lokal(3)
     real(8) :: Drotate_velosity_lokal(3)
-    real(8) :: source(3)
+    real(8) :: source(3), rho_init, p_init, wc, dd
 	
     
 	gr = blockDim%x * (blockIdx%x - 1) + threadIdx%x   ! Номер потока
@@ -605,10 +608,42 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
     F = 0.0_8
     QQ3 = 0.0_8
 
-    if (norm2(rr) < 0.05) return
+    if (dist < 0.05) return
+
+    ! Здесь можно задать особые граничные условия
+    if (dist < -0.05) then
+        the = polar_angle(rr(1), rr(2))
+        rho_init = 1.0/(dist**2 * 36.1275**2)
+        p_init = rho_init * 36.1275**2 / (1.666666666666 * 10.0 * 10.0)
+        wc = 36.1275/dist
+
+        rho_init = rho_init * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * 146.262))
+
+        ! 25 - 35
+        if(the > par_pi_8/5.14285714) then 
+            wc = wc * 1.8
+            rho_init = rho_init / (1.8)**2
+        else if(the > par_pi_8/7.2) then
+            dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+            wc = wc * dd
+            rho_init = rho_init / (dd)**2
+        end if
+
+
+        if(step == 1) then
+            dev_Cell_par2(1:8, gr) = (/rho_init, wc * rr(1), wc * rr(2), 0.0, p_init, 0.0, 0.0, 0.0/)
+        else if(step == 2) then
+            dev_Cell_par(1:8, gr) = (/rho_init, wc * rr(1), wc * rr(2), 0.0, p_init, 0.0, 0.0, 0.0/)
+        end if
+
+        return
+    end if
 
     source = Source_MK(qqq)
-    !source = 0.0
+
+    ! if( sqrt( (rr(1) * 319.319 + 30.0)**2 + (rr(2) * 319.319)**2) > 90.0) then
+    !     source = 0.0
+    ! end if
 
     ! Просуммируем потоки через грани
     do i = 1, 4  ! было 6, но сейчас у ячейки 4 грани
