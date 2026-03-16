@@ -24,3 +24,11 @@ SET_Gelios/SET_Gelios/.vs/
 *.py
 
 *.plt
+
+*.vsidx
+
+*.db
+
+*.json
+
+SET_ENA/.vs/SET_ENA/v17/.suo

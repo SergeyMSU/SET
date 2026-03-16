@@ -575,7 +575,7 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
 	real(8) :: ro3, u3, v3, w3, p3, bx3, by3, bz3
     real(8) :: rotate_velosity_lokal(3)
     real(8) :: Drotate_velosity_lokal(3)
-    real(8) :: source(3), rho_init, p_init, wc, dd
+    real(8) :: source(3), rho_init, p_init, wc, dd, chi
 	
     
 	gr = blockDim%x * (blockIdx%x - 1) + threadIdx%x   ! Номер потока
@@ -608,26 +608,47 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
     F = 0.0_8
     QQ3 = 0.0_8
 
-    if (dist < 0.05) return
+    if (dist < -0.05) return
 
     ! Здесь можно задать особые граничные условия
-    if (dist < -0.05) then
+    if (dist < 0.05) then
         the = polar_angle(rr(1), rr(2))
-        rho_init = 1.0/(dist**2 * 36.1275**2)
-        p_init = rho_init * 36.1275**2 / (1.666666666666 * 10.0 * 10.0)
-        wc = 36.1275/dist
+        chi = 36.1275
+        rho_init = 1.0/(dist**2 * chi**2)
+        p_init = rho_init * chi**2 / (1.666666666666 * 10.0 * 10.0)
+        wc = chi/dist
 
-        rho_init = rho_init * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * 146.262))
+        ! rho_init = rho_init * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/2.173913))
+        ! wc = wc * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/1.0 ))
 
         ! 25 - 35
-        if(the > par_pi_8/5.14285714) then 
-            wc = wc * 1.8
-            rho_init = rho_init / (1.8)**2
-        else if(the > par_pi_8/7.2) then
-            dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+        ! if(the > par_pi_8/5.14285714) then 
+        !     wc = wc * 1.8
+        !     rho_init = rho_init / (1.8)**2
+        ! else if(the > par_pi_8/7.2) then
+        !     dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+        !     wc = wc * dd
+        !     rho_init = rho_init / (dd)**2
+        ! end if
+
+        if(the < par_pi_8/9.0) then   ! 20   - обратная замена
+            dd = 1.8
             wc = wc * dd
             rho_init = rho_init / (dd)**2
         end if
+
+        ! if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
+        ! if(the > par_pi_8/5.14285714) then   ! 35
+        ! if(the < par_pi_8/6.0) then   ! 30  в другую сторону
+        ! if(the < par_pi_8/9.0) then   ! 30  в другую сторону
+        ! if(the > par_pi_8/4.5) then   ! 40
+        ! if(the > par_pi_8/3.2727272727272727) then   ! 55
+        ! if(the > par_pi_8/2.0) then   ! 90
+        ! if(the > par_pi_8/1.33333333333333) then   ! 135
+        !     dd = 1.8
+        !     wc = wc * dd
+        !     rho_init = rho_init / (dd)**2
+        ! end if
 
 
         if(step == 1) then
@@ -639,6 +660,7 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
         return
     end if
 
+    !source = 0.0
     source = Source_MK(qqq)
 
     ! if( sqrt( (rr(1) * 319.319 + 30.0)**2 + (rr(2) * 319.319)**2) > 90.0) then

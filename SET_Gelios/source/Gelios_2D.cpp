@@ -735,7 +735,7 @@ int main(int argc, char** argv)
         cout << "Print 1" << endl;
         //SS3->Print_Tecplot_MK("CUDA_tecplot_MK_" + name_gd);
 
-        //SS3->Culc_ENA(SS3);
+        SS3->Culc_ENA(SS3);
 
         double seconds = difftime(end, start);
         end = omp_get_wtime();

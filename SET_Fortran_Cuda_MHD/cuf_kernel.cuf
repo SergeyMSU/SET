@@ -430,8 +430,10 @@ module MY_CUDA
 		! Находим нужные точки для вывода
 		! Поиск ячейки с минимальным квадратом расстояния
 
-		x0 = 72.1836/319.319
-		y0 = 38.7675/319.319
+		! x0 = 72.1836/319.319
+		! y0 = 38.7675/319.319
+		x0 = 72.3823/319.319
+		y0 = 34.1387/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -447,8 +449,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 74.1586/319.319
-		y0 = 43.048/319.319
+		! x0 = 74.1586/319.319
+		! y0 = 43.048/319.319
+		x0 = 75.4741/319.319
+		y0 = 38.7201/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -464,8 +468,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 75.7992/319.319
-		y0 = 47.0446/319.319
+		! x0 = 75.7992/319.319
+		! y0 = 47.0446/319.319
+		x0 = 78.2475/319.319
+		y0 = 44.7783/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -481,8 +487,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 77.0808/319.319
-		y0 = 51.7549/319.319
+		! x0 = 77.0808/319.319
+		! y0 = 51.7549/319.319
+		x0 = 80.1164/319.319
+		y0 = 51.0118/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -500,8 +508,10 @@ module MY_CUDA
 
 		! x0 = 66.576/319.319
 		! y0 = 59.3892/319.319
-		x0 = 78.2087/319.319
-		y0 = 57.4643/319.319
+		! x0 = 78.2087/319.319
+		! y0 = 57.4643/319.319
+		x0 = 81.3665/319.319
+		y0 = 58.1266/319.319
 		rho2 = 10000000.0
 		Ncell = dev_N_cell
 		do i = 1, Ncell
@@ -519,8 +529,10 @@ module MY_CUDA
 
 		! x0 = 66.9747/319.319
 		! y0 = 62.1762/319.319
-		x0 = 78.7727/319.319
-		y0 = 63.3165/319.319
+		! x0 = 78.7727/319.319
+		! y0 = 63.3165/319.319
+		x0 = 81.7814/319.319
+		y0 = 66.7365/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -535,8 +547,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 78.9265/319.319
-		y0 = 69.3114/319.319
+		! x0 = 78.9265/319.319
+		! y0 = 69.3114/319.319
+		x0 = 81.2416/319.319
+		y0 = 74.7807/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -551,8 +565,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 77.6961/319.319
-		y0 = 81.7294/319.319
+		! x0 = 77.6961/319.319
+		! y0 = 81.7294/319.319
+		x0 = 79.6574/319.319
+		y0 = 83.1152/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -567,8 +583,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 75.4403/319.319
-		y0 = 89.4371/319.319
+		! x0 = 75.4403/319.319
+		! y0 = 89.4371/319.319
+		x0 = 77.4868/319.319
+		y0 = 90.2031/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -583,8 +601,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 72.7744/319.319
-		y0 = 97.1448/319.319
+		! x0 = 72.7744/319.319
+		! y0 = 97.1448/319.319
+		x0 = 74.6557/319.319
+		y0 = 97.0817/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -599,8 +619,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 69.6471/319.319
-		y0 = 104.282/319.319
+		! x0 = 69.6471/319.319
+		! y0 = 104.282/319.319
+		x0 = 72.0137/319.319
+		y0 = 102.431/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -615,8 +637,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 66.6223/319.319
-		y0 = 109.42/319.319
+		! x0 = 66.6223/319.319
+		! y0 = 109.42/319.319
+		x0 = 68.5801/319.319
+		y0 = 108.336/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -631,8 +655,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 62.9824/319.319
-		y0 = 114.559/319.319
+		! x0 = 62.9824/319.319
+		! y0 = 114.559/319.319
+		x0 = 64.1895/319.319
+		y0 = 114.764/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -647,8 +673,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 59.5987/319.319
-		y0 = 119.269/319.319
+		! x0 = 59.5987/319.319
+		! y0 = 119.269/319.319
+		x0 = 57.1843/319.319
+		y0 = 123.703/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -663,8 +691,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 55.7024/319.319
-		y0 = 124.122/319.319
+		! x0 = 55.7024/319.319
+		! y0 = 124.122/319.319
+		x0 = 49.8925/319.319
+		y0 = 131.762/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -679,8 +709,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 50.5448/319.319
-		y0 = 130.03/319.319
+		! x0 = 50.5448/319.319
+		! y0 = 130.03/319.319
+		x0 = 41.4275/319.319
+		y0 = 140.225/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -695,8 +727,10 @@ module MY_CUDA
 			end if
 		end do
 
-		x0 = 43.8266/319.319
-		y0 = 137.228/319.319
+		! x0 = 43.8266/319.319
+		! y0 = 137.228/319.319
+		x0 = 32.7414/319.319
+		y0 = 148.032/319.319
 		rho2 = 10000000.0
 		do i = 1, Ncell
 			dx = host_Cell_center(1, i)
@@ -759,12 +793,12 @@ module MY_CUDA
 			local1 = local1 + time_step
 			dev_time_all = local1
 
-			if(step > all_step - 100000) then
-				if(abs( local1 * 146.262 - real(nint(local1 * 146.262)) ) < 0.0001) then
-					print*, "EXIT     time = ", local1 * 146.262
-					EXIT
-				end if
-			end if
+			! if(step > all_step - 100000) then
+			! 	if(abs( local1 * 146.262 - real(nint(local1 * 146.262)) ) < 0.0001) then
+			! 		print*, "EXIT     time = ", local1 * 146.262
+			! 		EXIT
+			! 	end if
+			! end if
 
 			
 
@@ -851,7 +885,7 @@ module MY_CUDA
 			if(ierrAsync /= cudaSuccess) write(*,*) 'Error ASync start 19: ', cudaGetErrorString(cudaGetLastError())
 
 
-			if (mod(step, 1) == 0 .and. step > 1000000) then
+			if (mod(step, 1) == 0 .and. step > 30000000) then
 				time_host = local1 * 146.262
 				rho1 = dev_Cell_par(1, point1)
 				rho2 = dev_Cell_par(1, point2)
@@ -874,11 +908,12 @@ module MY_CUDA
 				, rho14, rho15, rho16, rho17)
 			end if
 
-			if ( (mod(step, 10000) == 0 .and. step > 2000000) .or. mod(step, 200000) == 0) then
+			if ( (mod(step, 10000) == 0 .and. step > 200000000) .or. mod(step, 50000) == 0) then
 				call Send_data_to_Host()
 				call Save_Storage()
 				time_host = local1 * 146.262
-				call Print_mult(stst, time_host)
+				! call Print_mult(stst, time_host)
+				call Print()
 				stst = stst + 1
 				print*, "SAVE"
 				call flush(6)
