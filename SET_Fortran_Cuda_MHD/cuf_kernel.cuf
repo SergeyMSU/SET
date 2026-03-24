@@ -771,7 +771,7 @@ module MY_CUDA
 		rotate_velosity = rotate_velosity_local
 		Drotate_velosity = Drotate_velosity_local
 
-		all_step = 2000000              ! Лучше чётное число шагов
+		all_step = 400000              ! Лучше чётное число шагов
 		print_step = 50000
 
 		print*, "START count"
@@ -794,7 +794,7 @@ module MY_CUDA
 			dev_time_all = local1
 
 			! if(step > all_step - 100000) then
-			! 	if(abs( local1 * 146.262 - real(nint(local1 * 146.262)) ) < 0.0001) then
+			! 	if(abs( local1 * (146.262)/11.0 - real(nint(local1 * (146.262)/11.0)) ) < 0.0001) then
 			! 		print*, "EXIT     time = ", local1 * 146.262
 			! 		EXIT
 			! 	end if
@@ -908,20 +908,23 @@ module MY_CUDA
 				, rho14, rho15, rho16, rho17)
 			end if
 
-			if ( (mod(step, 10000) == 0 .and. step > 200000000) .or. mod(step, 50000) == 0) then
+       
+
+
+			if ( (mod(step, 10000) == 0 .and. step > 200000000) .or. mod(step, 5000) == 0) then
 				call Send_data_to_Host()
-				call Save_Storage()
+				! call Save_Storage()
 				time_host = local1 * 146.262
-				! call Print_mult(stst, time_host)
+				call Print_mult(stst, time_host)
 				call Print()
 				stst = stst + 1
-				print*, "SAVE"
+				print*, "SAVE   time = ", local1 * 146.262
 				call flush(6)
 			end if
 	
 		end do
 		
-
+		print*, "STOP SAVE   time = ", local1 * 146.262
 		call Send_data_to_Host()
 
 		istat = cudaEventRecord(stopEvent, 0)

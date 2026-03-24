@@ -11,7 +11,7 @@ subroutine Print()
     real(8) :: x, y, rho, u, v, p
     
     ! Открываем текстовый файл для записи
-    open(newunit=unit_num, file='output_data_3.21.txt', status='replace', &
+    open(newunit=unit_num, file='output_data_3.5.txt', status='replace', &
          action='write', iostat=ierr)
     
     if (ierr /= 0) then
@@ -67,7 +67,7 @@ subroutine Print_mult(step, time)
     time_str = adjustl(time_str)
 
     ! Имя файла: output_data_3.5_<номер>.txt
-    filename = 'output_data_3.21_' // trim(step_str) // '.txt'
+    filename = 'output_data_3.5_' // trim(step_str) // '.txt'
 
     open(newunit=unit_num, file=filename, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
@@ -82,12 +82,12 @@ subroutine Print_mult(step, time)
     write(unit_num, '(A, ES12.5)') 'ZONE T="HP", STRANDID=1, SOLUTIONTIME=', time
 
     print*, "print TIME = ", time
-    open(newunit=time_unit, file="times_3.21.txt", status='unknown', position='append', action='write', iostat=ierr)
+    open(newunit=time_unit, file="times_3.5.txt", status='unknown', position='append', action='write', iostat=ierr)
     write(time_unit, '(ES12.5)') time 
     close(time_unit)
 
     ! Данные
-    do i = 1, size(host_Cell_par, 2), 3
+    do i = 1, size(host_Cell_par, 2), 1
         x = host_Cell_center(1, i) * 319.319
         y = host_Cell_center(2, i) * 319.319
         rho = host_Cell_par(1, i) * 0.073
@@ -105,7 +105,7 @@ subroutine write_T_rho(T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8, rho9, 
     real(8), intent(in) :: T, rho1, rho2, rho3, rho4, rho5, rho6, rho7, rho8          ! Входные аргументы двойной точности
     real(8), intent(in) :: rho9, rho10, rho11, rho12, rho13   , rho14  , rho15  , rho16  , rho17  
     integer, parameter :: out_unit = 10    ! Номер логического устройства
-    character(*), parameter :: filename = "1D_rhoT_3.21.txt"   ! Имя файла
+    character(*), parameter :: filename = "1D_rhoT_3.5.txt"   ! Имя файла
 
     ! Открыть файл для дозаписи (если не существует – будет создан)
     open(unit=out_unit, file=filename, position='append', action='write', status='unknown')
@@ -241,9 +241,9 @@ program MIK
     call CUDA_info()
     print*, "CUDA_START_MGD"
     call flush(6)
-    сall CUDA_START_MGD()
+    call CUDA_START_MGD()
 
-    call Print()
+    ! call Print()
 
     call Save_Storage()
 

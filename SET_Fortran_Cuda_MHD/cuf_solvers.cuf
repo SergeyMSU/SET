@@ -572,7 +572,7 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
 	real(8) :: dist, QQ3, the
 	real(8) :: POTOK(8), vv(3), rr(3), F(3)
 	real(8) :: time, Volume, sks
-	real(8) :: ro3, u3, v3, w3, p3, bx3, by3, bz3
+	real(8) :: ro3, u3, v3, w3, p3, bx3, by3, bz3, the0, the1, the2
     real(8) :: rotate_velosity_lokal(3)
     real(8) :: Drotate_velosity_lokal(3)
     real(8) :: source(3), rho_init, p_init, wc, dd, chi
@@ -608,34 +608,54 @@ attributes(global) subroutine CUF_MGD_cell_RK2(now, step)
     F = 0.0_8
     QQ3 = 0.0_8
 
-    if (dist < -0.05) return
+    if (dist < 0.05) return
 
     ! Здесь можно задать особые граничные условия
-    if (dist < 0.05) then
+    if (dist < -0.05) then
         the = polar_angle(rr(1), rr(2))
         chi = 36.1275
         rho_init = 1.0/(dist**2 * chi**2)
         p_init = rho_init * chi**2 / (1.666666666666 * 10.0 * 10.0)
         wc = chi/dist
 
-        ! rho_init = rho_init * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/2.173913))
+        rho_init = rho_init * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/11.0))
         ! wc = wc * (1.0 + 0.3 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/1.0 ))
 
         ! 25 - 35
-        ! if(the > par_pi_8/5.14285714) then 
+        if(the > par_pi_8/5.14285714) then 
+            wc = wc * 1.8
+            rho_init = rho_init / (1.8)**2
+        else if(the > par_pi_8/7.2) then
+            dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+            wc = wc * dd
+            rho_init = rho_init / (dd)**2
+        end if
+
+        !if(the < par_pi_8/9.0) then   ! 20   - обратная замена
+
+
+
+        ! the0 = par_pi_8/3.0 * (1.0 + 0.5 * sin(2.0 * par_pi_8 * dev_time_all * (146.262)/11.0))
+
+        ! the1 = the0 - par_pi_8/36.0
+        ! the2 = the0 + par_pi_8/36.0
+
+
+        ! if(the > the2) then 
         !     wc = wc * 1.8
         !     rho_init = rho_init / (1.8)**2
-        ! else if(the > par_pi_8/7.2) then
-        !     dd = 1.0 + 0.8 * (the - par_pi_8/7.2) / (par_pi_8 * (1.0/5.14285714 - 1.0/7.2))
+        ! else if(the > the1) then
+        !     dd = 1.0 + 0.8 * (the - the1) / (the2 - the1)
         !     wc = wc * dd
         !     rho_init = rho_init / (dd)**2
         ! end if
 
-        if(the < par_pi_8/9.0) then   ! 20   - обратная замена
-            dd = 1.8
-            wc = wc * dd
-            rho_init = rho_init / (dd)**2
-        end if
+
+        ! if(the >= the0) then 
+        !     dd = 1.8
+        !     wc = wc * dd
+        !     rho_init = rho_init / (dd)**2
+        ! end if
 
         ! if(polar_angle(host_Cell_center(1, i), host_Cell_center(2, i)) > par_pi_8/6.0) then   ! 30
         ! if(the > par_pi_8/5.14285714) then   ! 35
