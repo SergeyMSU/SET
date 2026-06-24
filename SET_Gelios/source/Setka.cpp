@@ -47,6 +47,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 	kk = n * (N2 + N1 - 2) + (N3 - 1) * (N4 + M1 - 1);
 	kkk = kk + (N4 - 1) * (M2 + M3 + M4);
 
+	cout << "New Setka: 1/10" << endl;
+
 	auto Cell_Centr = new Cell(); // Центральная особая ячейка (создаётся здесь отдельно, чтобы положить в общий массив только в конце связки всего)
 
 	for (int i = 0; i < N1; i++)
@@ -116,6 +118,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		R->M4 = M4;
 	}
 
+	cout << "New Setka: 2/10" << endl;
+
 	// Отдельно нужно обработать С-type линию от тройной точки
 	auto C = this->C_Rails[0];
 	for (int i = 0; i < M1; i++)
@@ -146,6 +150,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		}
 	}
 	// Обработка завершена
+
+	cout << "New Setka: 3/10" << endl;
 
 	for (int i = 1; i < N3; i++)
 	{
@@ -202,6 +208,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 			}
 		}
 	}
+
+	cout << "New Setka: 4/10" << endl;
 
 	// Теперь начинается создание самих ячеек
 	for (int i = 0; i < this->A_Rails.size() - 1; i++)
@@ -260,6 +268,7 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		}
 	}
 
+	cout << "New Setka: 5/10" << endl;
 
 	// Связка по-середине
 	auto P1 = this->A_Rails[this->A_Rails.size() - 1];
@@ -288,6 +297,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		P2->All_point[j]->my_cell.push_back(C);
 		this->All_Cells.push_back(C);
 	}
+
+	cout << "New Setka: 6/10" << endl;
 
 	// На этом этапе все узлы связаны, ячейки созданы. Теперь нужно связать ячейки. Создать грани. ---------------------------------------------
 
@@ -826,6 +837,8 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		this->All_Gran_copy.push_back(G2);
 	}
 
+	cout << "New Setka: 7/10" << endl;
+
 	// Шов по центру связываем с внутренней границей
 	auto K = this->All_Cells[kkk];
 	auto G = new Gran(K->contour[3], K->contour[0], Inner_sphere);
@@ -884,6 +897,7 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		}
 	}
 
+	cout << "New Setka: 8/10" << endl;
 
 	// Хотим добавить особые ячейки.
 	vector<Cell*> centr_cell;
@@ -1003,11 +1017,14 @@ Setka::Setka(int N1, int N2, int N3, int N4, int M1, int M2, int M3, int M4)
 		this->All_Gran.push_back(G2);*/
 	}
 
+	cout << "New Setka: 9/10" << endl;
+
 	for (auto& i : centr_cell)
 	{
 		this->All_Cells.push_back(i);
 	}
 
+	cout << "New Setka: 10/10" << endl;
 
 	delete Cell_Centr;
 
@@ -1703,10 +1720,16 @@ void Setka::Culc_ENA(Setka* SS3)
 	}
 
 
-	std::ofstream outFile2("jENA_angle_3.10.txt");
+	std::ofstream outFile2("jENA_angle_5.3-0.txt");
 
-	for (double the = 0.0001; the < pi; the = the + pi / 360.0)
+	int klkl = 0;
+	for (double the = 0.0001; the < pi; the = the + pi / (360.0))
 	{
+		klkl++;
+		if (klkl % 10 == 0)
+		{
+			cout << klkl << "   the = " << the * 180.0 / pi << endl;
+		}
 		//double the = pi / 2.0 + pi/1000.0;
 		double LOS_x = cos(the);   // Направление интегрирования
 		double LOS_y = sin(the);
@@ -1798,7 +1821,7 @@ void Setka::Culc_ENA(Setka* SS3)
 				A = this->Find_cell(b, x0, y0);
 				if (b == 0)
 				{
-					//cout << "! END " << x0 << " " << y0 << endl;
+					cout << "! END " << x0 << " " << y0 << endl;
 					break;
 				}
 			}
@@ -2011,10 +2034,36 @@ void Setka::Culc_ENA(Setka* SS3)
 
 void Setka::Read_file_for_FCMHD(void)
 {
-	std::ifstream file("FCMHD_3.10_out.bin", std::ios::binary);
-	if (!file.is_open()) {
+	//std::ifstream file("FCMHD_5.3_out.bin", std::ios::binary);
+	//if (!file.is_open()) {
+	//	throw std::runtime_error("Error opening file: FCMHD_1.8_out.bin");
+	//}
+
+	std::ifstream file;
+	std::string filename = "FCMHD_5.3_out.bin";
+	// Список путей для поиска (порядок важен)
+	std::vector<std::string> candidates = {
+		filename,                                   // текущая папка
+		"../" + filename,                           // родительская папка
+		"../SET_Fortran_Cuda_MHD/" + filename       // папка внутри родительской
+	};
+
+	bool bb = false;
+	for (const auto& path : candidates) 
+	{
+		file.open(path, std::ios::binary);
+		if (file.is_open()) 
+		{
+			bb = true;
+			break;
+		}
+	}
+
+	if (bb == false)
+	{
 		throw std::runtime_error("Error opening file: FCMHD_1.8_out.bin");
 	}
+
 
 	double Tall = 0.0;
 	file.read(reinterpret_cast<char*>(&Tall), sizeof(double));
@@ -4264,6 +4313,20 @@ void Setka::Save_Setka_ALL_ALPHA(string name)
 		num++;
 	}
 
+	num = 0;
+	for (auto& i : this->All_Points)
+	{
+		i->number = num;
+		num++;
+	}
+
+	num = 0;
+	for (auto& i : this->All_Cells)
+	{
+		i->number = num;
+		num++;
+	}
+
 
 	ofstream fout;
 	fout.open(name);
@@ -4793,7 +4856,7 @@ void Setka::Download_Setka_ALL_ALPHA(string name)
 	fout.close();
 }
 
-void Setka::Download_Setka_ALL_ALPHA_2_0(string name)
+void Setka::Download_Setka_ALL_ALPHA_2_0(string name, bool yzel_num)
 {
 	int n, m, k, type;
 	double x, y;
@@ -4834,31 +4897,54 @@ void Setka::Download_Setka_ALL_ALPHA_2_0(string name)
 		P->type = static_cast<Point_type>(type);
 		this->All_Points.push_back(P);
 	}
-
+	cout << "Setka.cpp    " << "1" << endl;
 	fout >> n;
+	cout << "Setka.cpp   n = " << n << endl;
 	this->All_Gran.reserve(n);
 	for (int i = 0; i < n; i++)
 	{
 		fout >> m >> k;
+		//cout << "m, k = " << m << " " << k << endl;
+		if (m >= this->All_Points.size() || k >= this->All_Points.size())
+		{
+			cout << "Error  " << m << " " << k << " " << this->All_Points.size() << endl;
+		}
+
+		if (m == 0 || k == 0)
+		{
+			cout << "m,k = 0  " << m << " " << k << " " << this->All_Points.size() << endl;
+		}
+
+		if (yzel_num == true)  // Это на тот случай, если узлы не с нуля начинаются
+		{
+			m--;
+			k--;
+		}
+
 		auto G = new Gran(this->All_Points[m], this->All_Points[k]);
 		G->main_gran = true;
 		fout >> type;
 		G->type = static_cast<Gran_type>(type);
 		this->All_Gran.push_back(G);
 	}
-
+	cout << "Setka.cpp    " << "2" << endl;
 	fout >> n;
 	this->All_Gran_copy.reserve(n);
 	for (int i = 0; i < n; i++)
 	{
 		fout >> m >> k;
+		if (yzel_num == true)  // Это на тот случай, если узлы не с нуля начинаются
+		{
+			m--;
+			k--;
+		}
 		auto G = new Gran(this->All_Points[m], this->All_Points[k]);
 		G->main_gran = false;
 		fout >> type;
 		G->type = static_cast<Gran_type>(type);
 		this->All_Gran_copy.push_back(G);
 	}
-
+	cout << "Setka.cpp    " << "3" << endl;
 	fout >> n;
 	this->A_Rails.reserve(n);
 	for (int i = 0; i < n; i++)
@@ -4918,7 +5004,7 @@ void Setka::Download_Setka_ALL_ALPHA_2_0(string name)
 		}
 		this->B_Rails.push_back(R);
 	}
-
+	cout << "Setka.cpp    " << "4" << endl;
 	fout >> n;
 	this->C_Rails.reserve(n);
 	for (int i = 0; i < n; i++)
@@ -4948,7 +5034,7 @@ void Setka::Download_Setka_ALL_ALPHA_2_0(string name)
 		}
 		this->C_Rails.push_back(R);
 	}
-
+	cout << "Setka.cpp    " << "5" << endl;
 	fout >> n;
 	this->D_Rails.reserve(n);
 	for (int i = 0; i < n; i++)

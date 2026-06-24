@@ -190,7 +190,7 @@ public:
 	void Save_Source_MK(string name);
 	void Download_Source_MK(string name);
 	void Download_Setka_ALL_ALPHA(string name);       // Старая версия для фалов до 122 включительно
-	void Download_Setka_ALL_ALPHA_2_0(string name);   // Новая функция с какого-то момента.... 
+	void Download_Setka_ALL_ALPHA_2_0(string name, bool yzel_num = false);   // Новая функция с какого-то момента.... 
 	void Copy(Setka* S); // Копирует сетку S (положения разрывов), при этом сетки разного разрешения
 	// Для того, чтобы копировать сетки, они должны находиться в одном масштабе (левая и правая граница должна быть такая-же)
 	// потому что это параметр не сетки, а параметр самой программы. #define

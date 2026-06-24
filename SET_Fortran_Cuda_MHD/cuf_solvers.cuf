@@ -426,7 +426,10 @@ attributes(global) subroutine CUF_MGD_grans_RK2(now, step)
          POTOK, n_disc)
 
 
-    time = min(time, 0.2 * dist/(max(dabs(dsl), dabs(dsp))+ dabs(wc)) )   ! REDUCTION
+    ! time = min(time, 0.2 * dist/(max(dabs(dsl), dabs(dsp))+ dabs(wc)) )   ! REDUCTION
+    time = min(time, 0.01 * dist/(max(dabs(dsl), dabs(dsp))+ dabs(wc)) )   ! REDUCTION
+
+
     !time = min(time, 0.9 * dist/(dev_norm2(cross_product(gran_centr, rotate_velosity))))
 	dev_Gran_POTOK(1:8, gr) = POTOK * square
 	

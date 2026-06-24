@@ -541,14 +541,19 @@ inline double int_1(const double& x, const double& cp)
 	return (cp / (sqrtpi_ * sqrtpi_ * sqrtpi_)) * (b * b * int_1_f1(x / cp) - 2.0 * a_2 * b * int_1_f2(x / cp) + kv(a_2) * int_1_f3(x / cp));
 }
 
-void Culc_ENA()
+void Culc_ENA(string name)
 {
-	cout << "Start: Culc_ENA" << endl;
-	std::ofstream outFile2("jENA_angle_test.txt");
+	cout << "Start: Culc_ENA  " << name << endl;
+	std::ofstream outFile2(name);
 
-	for (double the = 0.008; the < const_pi - 0.008; the = the + const_pi / 180.0)
+	int klkl = 0;
+	for (double the = 0.008; the < const_pi - 0.008; the = the + const_pi / (3.0 * 180.0) )
 	{
-		cout << "the = " << the * 180 / const_pi << "  degree " << endl;
+		klkl++;
+		if (klkl % 10 == 0)
+		{
+			cout << "the = " << the * 180 / const_pi << "  degree " << endl;
+		}
 		//double the = pi / 2.0 + pi/1000.0;
 		double LOS_x = cos(the);   // Направление интегрирования
 		double LOS_y = sin(the);
@@ -957,8 +962,8 @@ void Culc_ENA_the(double the, string name)
 
 int main()
 {
-	Set_Storage("FCMHD_1.bin"); // "FCMHD_1.bin"
-    ReadUpdatedStorage("FCMHD_1.8_out.bin"); // "FCMHD_1.6_out.bin"
+	Set_Storage("../SET_Fortran_Cuda_MHD/FCMHD_5.bin"); // "FCMHD_1.bin"
+    ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3_out.bin"); // "FCMHD_1.6_out.bin"
 
 	//WriteCentersToTecplot("centers.txt");
 
@@ -968,8 +973,44 @@ int main()
 	// Face_handle current_face;
     // InterpolateAtPoint(0.2, 0.2, result, current_face, current_face);
 
-	Culc_ENA_the(3 * const_pi / 180.0, "1.8(3)");
+	//Culc_ENA_the(3 * const_pi / 180.0, "1.8(3)");
 	//Culc_ENA_the(52.62 * const_pi / 180.0, "5.5(52.62)");
 	//Culc_ENA_the(103.48 * const_pi / 180.0, "5.5(103.48)");
-	//Culc_ENA();
+	Culc_ENA("jENA_angle_5.3-0.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-1_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-1.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-2_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-2.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-3_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-3.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-4_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-4.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-5_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-5.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-6_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-6.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-7_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-7.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-8_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-8.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-9_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-9.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-10_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-10.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-11_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-11.txt");
+
+	ReadUpdatedStorage("../SET_Fortran_Cuda_MHD/FCMHD_5.3-12_out.bin"); // "FCMHD_1.6_out.bin"
+	Culc_ENA("jENA_angle_5.3-12.txt");
 }

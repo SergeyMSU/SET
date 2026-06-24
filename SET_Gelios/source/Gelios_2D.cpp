@@ -696,10 +696,10 @@ int main(int argc, char** argv)
         // 
         //SS3 = new Setka(100, 70, 50, 200, 135, 60, 5, 5);       // 1
         // 
-        SS3 = new Setka(1700, 1300, 150, 500, 250, 800, 5, 5);    // 5
+        //SS3 = new Setka(1700, 1300, 150, 500, 250, 800, 5, 5);    // 5
 
-        //SS3 = new Setka();
-        //SS3->Download_Setka_ALL_ALPHA_2_0("SET_4.txt");
+        SS3 = new Setka();
+        SS3->Download_Setka_ALL_ALPHA_2_0("SET_5.1.txt");
 
 
         for (auto& i : SS3->All_Cells)
@@ -725,11 +725,12 @@ int main(int argc, char** argv)
         SS3->Init_conditions();
         cout << "End pereinterpol" << endl;
 
+        cout << "Print -1" << endl;
+        //SS3->Write_file_for_FCMHD();
+        //SS3->Save_Setka_ALL_ALPHA("SET_5.1.txt");
 
-        SS3->Write_file_for_FCMHD();
-        SS3->Save_Setka_ALL_ALPHA("SET_5.txt");
-
-        //SS3->Read_file_for_FCMHD();
+        cout << "Print 0" << endl;
+        SS3->Read_file_for_FCMHD();
         //SS3->Print_Gran("SS3_gran_" + name_gd);
 
         cout << "Print 1" << endl;

@@ -403,7 +403,7 @@ module MY_CUDA
 		integer :: step, now, now2, step2, i, Ncell
 		type(dim3) :: grid, tBlock
 		integer(4):: ierrSync, ierrAsync, nx, ny, ijk, istat, potok_in_block, all_step, print_step
-		real(8) :: local1, rotate_velosity_local(3), alpha
+		real(8) :: local1, rotate_velosity_local(3), alpha, time_start
 		real(8) :: Drotate_velosity_local(3)
 		real(8) :: point(3), dev_Omega_local
 		type(cudaEvent) :: startEvent, stopEvent
@@ -772,7 +772,7 @@ module MY_CUDA
 		Drotate_velosity = Drotate_velosity_local
 
 		all_step = 400000              ! Лучше чётное число шагов
-		print_step = 50000
+		print_step = 100
 
 		print*, "START count"
     	call flush(6)
@@ -806,7 +806,7 @@ module MY_CUDA
 				print*, "all time = ", local1
 			end if
 
-			!if(local1 >= 14.0) EXIT
+			if(local1 >= 9.36582E-6) EXIT   ! Это пол дня
 			
 
 			! alpha = local1 * dev_Omega_local;
@@ -911,7 +911,7 @@ module MY_CUDA
        
 
 
-			if ( (mod(step, 10000) == 0 .and. step > 200000000) .or. mod(step, 5000) == 0) then
+			if ( (mod(step, 10000) == 0 .and. step > 200000000) .or. mod(step, 500000) == 0) then
 				call Send_data_to_Host()
 				! call Save_Storage()
 				time_host = local1 * 146.262
